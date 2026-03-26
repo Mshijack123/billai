@@ -1,0 +1,455 @@
+import React, { useState } from 'react';
+import { 
+  User, 
+  FileText, 
+  Bell, 
+  CreditCard, 
+  Shield, 
+  Save, 
+  Upload, 
+  CheckCircle2,
+  AlertCircle,
+  LogOut,
+  ChevronRight
+} from 'lucide-react';
+import { useFirebase } from '../components/FirebaseProvider';
+import { useInvoiceLimit } from '../hooks/useInvoiceLimit';
+import { db, doc, updateDoc } from '../firebase';
+import { motion, AnimatePresence } from 'motion/react';
+import { INDIAN_STATES } from '../lib/gst-calculator';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+const SettingsPage = () => {
+  const { profile } = useFirebase();
+  const { invoiceCount, limit, remaining } = useInvoiceLimit();
+  const [activeTab, setActiveTab] = useState<'profile' | 'invoice' | 'notifications' | 'billing' | 'security'>('profile');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const [formData, setFormData] = useState({
+    businessName: profile?.businessName || '',
+    displayName: profile?.displayName || '',
+    email: profile?.email || '',
+    phone: profile?.phone || '',
+    gstin: profile?.gstin || '',
+    address: profile?.address || '',
+    state: profile?.state || 'Rajasthan',
+    bankDetails: {
+      bankName: profile?.bankDetails?.bankName || '',
+      accountNumber: profile?.bankDetails?.accountNumber || '',
+      ifsc: profile?.bankDetails?.ifsc || '',
+      upiId: profile?.bankDetails?.upiId || ''
+    }
+  });
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile) return;
+    setIsSaving(true);
+    try {
+      await updateDoc(doc(db, 'users', profile.uid), formData);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const tabs = [
+    { id: 'profile', label: 'Business Profile', icon: User },
+    { id: 'invoice', label: 'Invoice Settings', icon: FileText },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'billing', label: 'Billing & Plan', icon: CreditCard },
+    { id: 'security', label: 'Security', icon: Shield },
+  ];
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-8">
+      {/* Sub-nav */}
+      <aside className="lg:w-64 space-y-2">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={cn(
+              "w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group",
+              activeTab === tab.id 
+                ? "bg-orange-500/10 text-orange-500 border border-orange-500/20" 
+                : "text-gray-400 hover:bg-white/5 hover:text-white"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <tab.icon className={cn("w-5 h-5", activeTab === tab.id ? "text-orange-500" : "text-gray-400 group-hover:text-white")} />
+              <span className="font-medium text-sm">{tab.label}</span>
+            </div>
+            <ChevronRight className={cn("w-4 h-4 transition-transform", activeTab === tab.id ? "rotate-90" : "")} />
+          </button>
+        ))}
+      </aside>
+
+      {/* Content Area */}
+      <div className="flex-1">
+        <AnimatePresence mode="wait">
+          {activeTab === 'profile' && (
+            <motion.div
+              key="profile"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="glass p-8 rounded-[2.5rem] border border-white/5"
+            >
+              <div className="flex items-center justify-between mb-10">
+                <div>
+                  <h2 className="text-2xl font-bold">Business Profile</h2>
+                  <p className="text-sm text-gray-500">Apne business ki details update karo</p>
+                </div>
+                {saveSuccess && (
+                  <div className="flex items-center gap-2 text-green-500 text-sm font-bold bg-green-500/10 px-4 py-2 rounded-full border border-green-500/20">
+                    <CheckCircle2 className="w-4 h-4" /> Changes Save ho gaye!
+                  </div>
+                )}
+              </div>
+
+              <form onSubmit={handleSave} className="space-y-8">
+                <div className="flex items-center gap-6 mb-10">
+                  <div className="w-24 h-24 rounded-[2rem] bg-orange-500/10 border-2 border-dashed border-orange-500/30 flex flex-col items-center justify-center text-orange-500 cursor-pointer hover:bg-orange-500/20 transition-all group">
+                    <Upload className="w-6 h-6 mb-1 group-hover:scale-110 transition-transform" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">Logo</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold mb-1">Business Logo</h4>
+                    <p className="text-xs text-gray-500">PNG or JPG. Max 2MB.</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Business Name *</label>
+                    <input 
+                      required
+                      type="text" 
+                      value={formData.businessName}
+                      onChange={(e) => setFormData({...formData, businessName: e.target.value})}
+                      placeholder="Gupta Shoes" 
+                      className="input-dark w-full" 
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Owner Name *</label>
+                    <input 
+                      required
+                      type="text" 
+                      value={formData.displayName}
+                      onChange={(e) => setFormData({...formData, displayName: e.target.value})}
+                      placeholder="Ramesh Gupta" 
+                      className="input-dark w-full" 
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Email *</label>
+                    <input 
+                      required
+                      type="email" 
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      placeholder="ramesh@company.com" 
+                      className="input-dark w-full" 
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Phone *</label>
+                    <input 
+                      required
+                      type="tel" 
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      placeholder="9876543210" 
+                      className="input-dark w-full" 
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">GSTIN</label>
+                    <input 
+                      type="text" 
+                      value={formData.gstin}
+                      onChange={(e) => setFormData({...formData, gstin: e.target.value})}
+                      placeholder="08ABCDE1234F1Z5" 
+                      className="input-dark w-full" 
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">State</label>
+                    <select 
+                      value={formData.state}
+                      onChange={(e) => setFormData({...formData, state: e.target.value})}
+                      className="input-dark w-full appearance-none"
+                    >
+                      {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Address</label>
+                  <textarea 
+                    value={formData.address}
+                    onChange={(e) => setFormData({...formData, address: e.target.value})}
+                    placeholder="Full business address..." 
+                    className="input-dark w-full h-24 resize-none" 
+                  />
+                </div>
+
+                <div className="pt-8 border-t border-white/5">
+                  <h3 className="text-lg font-bold mb-6">Bank Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Bank Name</label>
+                      <input 
+                        type="text" 
+                        value={formData.bankDetails.bankName}
+                        onChange={(e) => setFormData({...formData, bankDetails: {...formData.bankDetails, bankName: e.target.value}})}
+                        placeholder="State Bank of India" 
+                        className="input-dark w-full" 
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Account Number</label>
+                      <input 
+                        type="text" 
+                        value={formData.bankDetails.accountNumber}
+                        onChange={(e) => setFormData({...formData, bankDetails: {...formData.bankDetails, accountNumber: e.target.value}})}
+                        placeholder="XXXX XXXX 1234" 
+                        className="input-dark w-full" 
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">IFSC Code</label>
+                      <input 
+                        type="text" 
+                        value={formData.bankDetails.ifsc}
+                        onChange={(e) => setFormData({...formData, bankDetails: {...formData.bankDetails, ifsc: e.target.value}})}
+                        placeholder="SBIN0001234" 
+                        className="input-dark w-full" 
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">UPI ID</label>
+                      <input 
+                        type="text" 
+                        value={formData.bankDetails.upiId}
+                        onChange={(e) => setFormData({...formData, bankDetails: {...formData.bankDetails, upiId: e.target.value}})}
+                        placeholder="billai@upi" 
+                        className="input-dark w-full" 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-8">
+                  <button type="submit" disabled={isSaving} className="btn-orange flex items-center gap-2">
+                    {isSaving ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-5 h-5" />}
+                    Changes Save karo
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          )}
+
+          {activeTab === 'billing' && (
+            <motion.div
+              key="billing"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-8"
+            >
+              <div className="glass p-10 rounded-[2.5rem] border border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+                <div>
+                  <div className="bg-orange-500/10 text-orange-500 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest inline-block mb-4">Current Plan</div>
+                  <h2 className="text-4xl font-display font-bold mb-2">FREE PLAN</h2>
+                  <p className="text-gray-400">20 invoices per month</p>
+                </div>
+                <div className="flex-1 max-w-xs w-full">
+                  <div className="flex justify-between text-xs font-bold mb-2">
+                    <span className="text-gray-500 uppercase tracking-widest">Usage</span>
+                    <span className="text-orange-500">{invoiceCount}/{limit} used</span>
+                  </div>
+                  <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div 
+                      className={cn(
+                        "h-full transition-all duration-500",
+                        invoiceCount >= limit ? "bg-red-500" : "bg-orange-500"
+                      )} 
+                      style={{ width: `${Math.min(100, (invoiceCount / limit) * 100)}%` }} 
+                    />
+                  </div>
+                  <p className="text-[10px] text-gray-600 mt-2 text-right">
+                    {remaining > 0 
+                      ? `Is mahine ${remaining} invoices bache hain` 
+                      : "Aapki is mahine ki limit khatam ho gayi hai"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="glass p-10 rounded-[2.5rem] border-2 border-orange-500 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-[100px] -mr-32 -mt-32" />
+                <div className="relative z-10">
+                  <h3 className="text-2xl font-bold mb-2">Upgrade to PRO</h3>
+                  <p className="text-gray-400 mb-8 max-w-md">Get unlimited invoices, GST reports, PDF exports, and priority support.</p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
+                    {[
+                      'Unlimited invoices',
+                      'GST reports + export',
+                      'WhatsApp sharing',
+                      'Priority support',
+                      'Custom invoice branding',
+                      'Multi-user access'
+                    ].map(f => (
+                      <div key={f} className="flex items-center gap-3 text-sm text-gray-300">
+                        <CheckCircle2 className="w-5 h-5 text-orange-500" /> {f}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-6">
+                    <div className="text-center sm:text-left">
+                      <p className="text-4xl font-display font-bold">₹299 <span className="text-lg text-gray-500 font-normal">/month</span></p>
+                      <p className="text-[10px] text-gray-600 uppercase tracking-widest font-bold">Billed monthly</p>
+                    </div>
+                    <button className="btn-orange px-10">Pro upgrade karo →</button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'invoice' && (
+            <motion.div
+              key="invoice"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="glass p-8 rounded-[2.5rem] border border-white/5"
+            >
+              <h2 className="text-2xl font-bold mb-2">Invoice Settings</h2>
+              <p className="text-sm text-gray-500 mb-10">Customize your invoices</p>
+
+              <div className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Invoice Prefix</label>
+                    <input type="text" defaultValue="INV" className="input-dark w-full" />
+                    <p className="text-[10px] text-gray-600 ml-1">Preview: INV-0001</p>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Starting Number</label>
+                    <input type="number" defaultValue="1" className="input-dark w-full" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Default GST Rate</label>
+                    <select className="input-dark w-full appearance-none">
+                      <option>18%</option>
+                      <option>12%</option>
+                      <option>5%</option>
+                      <option>28%</option>
+                      <option>0%</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Payment Terms</label>
+                    <select className="input-dark w-full appearance-none">
+                      <option>Immediate</option>
+                      <option>7 days</option>
+                      <option>15 days</option>
+                      <option>30 days</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Default Invoice Notes</label>
+                  <textarea 
+                    defaultValue="Thank you for your business! GST invoice generated by BillAI."
+                    className="input-dark w-full h-24 resize-none" 
+                  />
+                </div>
+
+                <div className="space-y-4 pt-6">
+                  {[
+                    { label: 'Auto-generate invoice number', checked: true },
+                    { label: 'Send invoice copy to my email', checked: true },
+                    { label: 'Show bank details on invoice', checked: true },
+                    { label: 'Enable digital signature', checked: false }
+                  ].map(t => (
+                    <div key={t.label} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                      <span className="text-sm font-medium">{t.label}</span>
+                      <div className={cn(
+                        "w-12 h-6 rounded-full relative transition-colors cursor-pointer",
+                        t.checked ? "bg-orange-500" : "bg-white/10"
+                      )}>
+                        <div className={cn(
+                          "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
+                          t.checked ? "right-1" : "left-1"
+                        )} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'security' && (
+            <motion.div
+              key="security"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-8"
+            >
+              <div className="glass p-8 rounded-[2.5rem] border border-white/5">
+                <h2 className="text-2xl font-bold mb-2">Security</h2>
+                <p className="text-sm text-gray-500 mb-10">Manage your account security</p>
+
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-6 bg-white/5 rounded-2xl border border-white/5">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-orange-500/10 rounded-xl flex items-center justify-center">
+                        <Shield className="w-6 h-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="font-bold">Two-Factor Authentication</p>
+                        <p className="text-xs text-gray-500">Add an extra layer of security</p>
+                      </div>
+                    </div>
+                    <button className="px-4 py-2 border border-white/10 rounded-xl text-xs font-bold hover:bg-white/5">Enable</button>
+                  </div>
+
+                  <div className="p-6 bg-red-500/5 rounded-2xl border border-red-500/10">
+                    <h4 className="text-red-500 font-bold mb-2 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" /> Danger Zone
+                    </h4>
+                    <p className="text-xs text-gray-500 mb-6">Once you delete your account, there is no going back. Please be certain.</p>
+                    <button className="px-6 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl text-sm font-bold transition-all">
+                      Delete Account
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
+
+export default SettingsPage;

@@ -1,0 +1,5 @@
+{
+  "name": "BillAI",
+  "description": "India's first Hindi AI-powered GST billing software. Speak or type in Hindi/Hinglish to generate GST compliant invoices instantly.",
+  "requestFramePermissions": []
+}

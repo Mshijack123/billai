@@ -1,0 +1,62 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.businessId;
+    }
+    
+    function isNewDocOwner() {
+      return isAuthenticated() && request.auth.uid == request.resource.data.businessId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        (request.auth.token.email == "mshijacknew@gmail.com" && request.auth.token.email_verified == true) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    // User Profiles
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && 
+        request.resource.data.plan == resource.data.plan; // Plan can't be changed by user
+    }
+
+    // Customers
+    match /customers/{customerId} {
+      allow read: if isAuthenticated() && (resource.data.businessId == request.auth.uid || isAdmin());
+      allow create: if isNewDocOwner();
+      allow update: if isDocOwner() && request.resource.data.businessId == resource.data.businessId;
+      allow delete: if isDocOwner();
+    }
+
+    // Invoices
+    match /invoices/{invoiceId} {
+      allow read: if isAuthenticated() && (resource.data.businessId == request.auth.uid || isAdmin());
+      allow create: if isNewDocOwner();
+      allow update: if isDocOwner() && request.resource.data.businessId == resource.data.businessId;
+      allow delete: if isDocOwner();
+    }
+
+    // Products
+    match /products/{productId} {
+      allow read: if isAuthenticated() && (resource.data.businessId == request.auth.uid || isAdmin());
+      allow create: if isNewDocOwner();
+      allow update: if isDocOwner() && request.resource.data.businessId == resource.data.businessId;
+      allow delete: if isDocOwner();
+    }
+  }
+}

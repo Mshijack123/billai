@@ -1,0 +1,409 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Search, 
+  Filter, 
+  Download, 
+  Eye, 
+  Edit3, 
+  MoreVertical, 
+  Plus,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  Check,
+  X
+} from 'lucide-react';
+import { useFirebase } from '../components/FirebaseProvider';
+import { db, collection, query, where, onSnapshot, updateDoc, doc } from '../firebase';
+import { Invoice } from '../types';
+import { AIInvoiceModal } from '../components/AIInvoiceModal';
+import { ManualInvoiceModal } from '../components/ManualInvoiceModal';
+import { InvoiceDetailModal } from '../components/InvoiceDetailModal';
+import { exportToCSV } from '../lib/csv-export';
+import { motion, AnimatePresence } from 'motion/react';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+const InvoicesPage = () => {
+  const { profile } = useFirebase();
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!profile) return;
+
+    const q = query(collection(db, 'invoices'), where('businessId', '==', profile.uid));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice));
+      setInvoices(docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    });
+
+    return () => unsubscribe();
+  }, [profile]);
+
+  useEffect(() => {
+    let result = invoices;
+    
+    if (searchTerm) {
+      result = result.filter(inv => 
+        inv.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inv.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    if (statusFilter !== 'all') {
+      result = result.filter(inv => inv.status === statusFilter);
+    }
+    
+    setFilteredInvoices(result);
+  }, [searchTerm, statusFilter, invoices]);
+
+  const toggleSelectAll = () => {
+    if (selectedInvoices.length === filteredInvoices.length) {
+      setSelectedInvoices([]);
+    } else {
+      setSelectedInvoices(filteredInvoices.map(inv => inv.id));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    if (selectedInvoices.includes(id)) {
+      setSelectedInvoices(selectedInvoices.filter(i => i !== id));
+    } else {
+      setSelectedInvoices([...selectedInvoices, id]);
+    }
+  };
+
+  const handleMarkAsPaid = async (id?: string) => {
+    const idsToUpdate = id ? [id] : selectedInvoices;
+    if (idsToUpdate.length === 0) return;
+
+    try {
+      const promises = idsToUpdate.map(invoiceId => 
+        updateDoc(doc(db, 'invoices', invoiceId), { status: 'paid' })
+      );
+      await Promise.all(promises);
+      setSelectedInvoices([]);
+    } catch (err) {
+      console.error('Error updating invoice status:', err);
+    }
+  };
+
+  const handleCSVExport = () => {
+    const dataToExport = filteredInvoices.map(inv => ({
+      'Invoice Number': inv.invoiceNumber,
+      'Customer Name': inv.customerName,
+      'Date': inv.date,
+      'Due Date': inv.dueDate,
+      'Subtotal': inv.subtotal,
+      'CGST': inv.cgst,
+      'SGST': inv.sgst,
+      'IGST': inv.igst,
+      'Total': inv.total,
+      'Status': inv.status,
+      'GST Type': inv.gstType
+    }));
+    exportToCSV(dataToExport, `Invoices-${new Date().toISOString().split('T')[0]}`);
+  };
+
+  const stats = {
+    total: invoices.length,
+    paid: invoices.filter(i => i.status === 'paid').length,
+    paidAmount: invoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.total, 0),
+    pending: invoices.filter(i => i.status === 'pending').length,
+    pendingAmount: invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + i.total, 0),
+    partial: invoices.filter(i => i.status === 'partial').length,
+    partialAmount: invoices.filter(i => i.status === 'partial').reduce((sum, i) => sum + i.total, 0),
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Top Bar */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="flex-1 flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2" />
+            <input 
+              type="text" 
+              placeholder="Invoice ya customer dhundo..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="input-dark w-full pl-12"
+            />
+          </div>
+          <div className="flex gap-4">
+            <div className="relative">
+              <Filter className="w-4 h-4 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2" />
+              <select 
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="input-dark pl-12 pr-10 appearance-none cursor-pointer"
+              >
+                <option value="all">All Status</option>
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+                <option value="partial">Partial</option>
+              </select>
+            </div>
+            <button 
+              onClick={handleCSVExport}
+              className="input-dark flex items-center gap-2 hover:bg-white/10 transition-colors"
+            >
+              <Download className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium">CSV Export</span>
+            </button>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setIsManualModalOpen(true)}
+            className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm font-bold hover:bg-white/10 transition-all flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" /> Manual
+          </button>
+          <button 
+            onClick={() => setIsAIModalOpen(true)}
+            className="btn-orange flex items-center justify-center gap-2"
+          >
+            <Plus className="w-5 h-5" /> Naya Invoice
+          </button>
+        </div>
+      </div>
+
+      {/* Summary Strip */}
+      <div className="glass rounded-2xl border border-white/5 p-6 flex flex-wrap items-center justify-between gap-8">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
+            <FileText className="w-5 h-5 text-gray-400" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Total</p>
+            <p className="text-xl font-bold">{stats.total}</p>
+          </div>
+        </div>
+        <div className="h-10 w-px bg-white/5 hidden md:block" />
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center">
+            <div className="w-2 h-2 bg-green-500 rounded-full" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Paid</p>
+            <p className="text-xl font-bold">{stats.paid} <span className="text-xs text-green-500 font-mono ml-1">₹{stats.paidAmount.toLocaleString()}</span></p>
+          </div>
+        </div>
+        <div className="h-10 w-px bg-white/5 hidden md:block" />
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center">
+            <div className="w-2 h-2 bg-amber-500 rounded-full" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Pending</p>
+            <p className="text-xl font-bold">{stats.pending} <span className="text-xs text-amber-500 font-mono ml-1">₹{stats.pendingAmount.toLocaleString()}</span></p>
+          </div>
+        </div>
+        <div className="h-10 w-px bg-white/5 hidden md:block" />
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
+            <div className="w-2 h-2 bg-blue-500 rounded-full" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Partial</p>
+            <p className="text-xl font-bold">{stats.partial} <span className="text-xs text-blue-500 font-mono ml-1">₹{stats.partialAmount.toLocaleString()}</span></p>
+          </div>
+        </div>
+      </div>
+
+      {/* Invoices Table */}
+      <div className="glass rounded-[2.5rem] border border-white/5 overflow-hidden relative">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="text-[10px] text-gray-500 uppercase tracking-widest border-b border-white/5">
+                <th className="px-8 py-4">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedInvoices.length === filteredInvoices.length && filteredInvoices.length > 0}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-white/10 bg-white/5 text-orange-500 focus:ring-orange-500" 
+                  />
+                </th>
+                <th className="px-8 py-4 font-bold">Invoice #</th>
+                <th className="px-8 py-4 font-bold">Customer</th>
+                <th className="px-8 py-4 font-bold">Date</th>
+                <th className="px-8 py-4 font-bold">Items</th>
+                <th className="px-8 py-4 font-bold">Amount</th>
+                <th className="px-8 py-4 font-bold">GST</th>
+                <th className="px-8 py-4 font-bold">Status</th>
+                <th className="px-8 py-4 font-bold">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {filteredInvoices.map((inv) => (
+                <tr key={inv.id} className="hover:bg-white/5 transition-colors group">
+                  <td className="px-8 py-4">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedInvoices.includes(inv.id)}
+                      onChange={() => toggleSelect(inv.id)}
+                      className="w-4 h-4 rounded border-white/10 bg-white/5 text-orange-500 focus:ring-orange-500" 
+                    />
+                  </td>
+                  <td className="px-8 py-4 font-mono text-sm">{inv.invoiceNumber}</td>
+                  <td className="px-8 py-4">
+                    <p className="text-sm font-bold">{inv.customerName}</p>
+                  </td>
+                  <td className="px-8 py-4 text-xs text-gray-500">{new Date(inv.date).toLocaleDateString()}</td>
+                  <td className="px-8 py-4 text-xs text-gray-500">{inv.items.length} items</td>
+                  <td className="px-8 py-4 font-mono font-bold text-sm">₹{inv.total.toLocaleString()}</td>
+                  <td className="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">{inv.gstType}</td>
+                  <td className="px-8 py-4">
+                    <span className={cn(
+                      "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
+                      inv.status === 'paid' ? "bg-green-500/10 text-green-500" : 
+                      inv.status === 'pending' ? "bg-amber-500/10 text-amber-500" : 
+                      "bg-blue-500/10 text-blue-500"
+                    )}>
+                      {inv.status}
+                    </span>
+                  </td>
+                  <td className="px-8 py-4">
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => setSelectedInvoice(inv)}
+                        className="p-2 hover:bg-white/10 rounded-lg transition-colors" 
+                        title="View"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => setSelectedInvoice(inv)}
+                        className="p-2 hover:bg-white/10 rounded-lg transition-colors" 
+                        title="Download PDF"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => {
+                          const data = [{
+                            'Invoice #': inv.invoiceNumber,
+                            'Customer': inv.customerName,
+                            'Date': inv.date,
+                            'Amount': inv.total,
+                            'Status': inv.status,
+                            'GST Type': inv.gstType
+                          }];
+                          exportToCSV(data, `Invoice-${inv.invoiceNumber}`);
+                        }}
+                        className="p-2 hover:bg-white/10 rounded-lg transition-colors" 
+                        title="Download CSV"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </button>
+                      {inv.status !== 'paid' && (
+                        <button 
+                          onClick={() => handleMarkAsPaid(inv.id)}
+                          className="p-2 hover:bg-green-500/10 rounded-lg text-gray-400 hover:text-green-500 transition-colors" 
+                          title="Mark as Paid"
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button className="p-2 hover:bg-white/10 rounded-lg transition-colors" title="Edit Status"><Edit3 className="w-4 h-4" /></button>
+                      <button className="p-2 hover:bg-white/10 rounded-lg transition-colors"><MoreVertical className="w-4 h-4" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filteredInvoices.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-8 py-20 text-center text-gray-500">
+                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                    <p>Koi invoice nahi mila.</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="p-8 flex items-center justify-between border-t border-white/5 bg-[#0C1020]/50">
+          <p className="text-xs text-gray-500">Showing {filteredInvoices.length} of {invoices.length} invoices</p>
+          <div className="flex items-center gap-2">
+            <button className="p-2 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-50" disabled>
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button className="w-8 h-8 rounded-lg bg-orange-500 text-white text-xs font-bold">1</button>
+            <button className="p-2 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-50" disabled>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Bulk Actions */}
+        <AnimatePresence>
+          {selectedInvoices.length > 0 && (
+            <motion.div 
+              initial={{ y: 100 }}
+              animate={{ y: 0 }}
+              exit={{ y: 100 }}
+              className="fixed bottom-8 left-1/2 -translate-x-1/2 glass p-4 rounded-2xl shadow-2xl shadow-black z-50 flex items-center gap-6 border-orange-500/30"
+            >
+              <span className="text-sm font-bold text-orange-500">{selectedInvoices.length} selected</span>
+              <div className="h-6 w-px bg-white/10" />
+              <div className="flex items-center gap-2">
+                <button className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                  <Download className="w-4 h-4" /> Download PDFs
+                </button>
+                <button 
+                  onClick={() => handleMarkAsPaid()}
+                  className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-500 rounded-xl text-xs font-bold transition-all"
+                >
+                  Mark as Paid
+                </button>
+                <button className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 rounded-xl text-xs font-bold transition-all">
+                  Delete
+                </button>
+              </div>
+              <button onClick={() => setSelectedInvoices([])} className="p-2 hover:bg-white/10 rounded-lg">
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <AIInvoiceModal 
+        isOpen={isAIModalOpen} 
+        onClose={() => setIsAIModalOpen(false)} 
+        onSuccess={() => {}}
+      />
+
+      <ManualInvoiceModal 
+        isOpen={isManualModalOpen}
+        onClose={() => setIsManualModalOpen(false)}
+        onSuccess={() => {}}
+      />
+
+      <InvoiceDetailModal 
+        isOpen={!!selectedInvoice}
+        onClose={() => setSelectedInvoice(null)}
+        invoice={selectedInvoice}
+        profile={profile}
+      />
+    </div>
+  );
+};
+
+export default InvoicesPage;
