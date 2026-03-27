@@ -125,8 +125,20 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
       const totalGst = invoiceItems.reduce((sum, item) => sum + item.gstAmount, 0);
       const total = subtotal + totalGst;
 
+      // Calculate due date based on payment terms
+      const getDueDate = (terms: string) => {
+        const date = new Date();
+        if (terms === '7 days') date.setDate(date.getDate() + 7);
+        else if (terms === '15 days') date.setDate(date.getDate() + 15);
+        else if (terms === '30 days') date.setDate(date.getDate() + 30);
+        return date.toISOString().split('T')[0];
+      };
+
+      const prefix = profile.invoiceSettings?.prefix || 'INV';
+      const randomNum = Math.floor(1000 + Math.random() * 9000);
+
       const newInvoice: Omit<Invoice, 'id'> = {
-        invoiceNumber: `INV-${Math.floor(1000 + Math.random() * 9000)}`,
+        invoiceNumber: `${prefix}-${randomNum}`,
         businessId: profile.uid,
         customerId,
         customerName,
@@ -134,7 +146,7 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
         customerState: customerState,
         customerAddress: matchedCustomer?.address || '',
         date: new Date().toISOString().split('T')[0],
-        dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        dueDate: getDueDate(profile.invoiceSettings?.paymentTerms || 'Immediate'),
         items: invoiceItems,
         subtotal,
         cgst: gstType === 'CGST_SGST' ? totalGst / 2 : 0,
@@ -143,6 +155,7 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
         total,
         status: parsedData.payment_status,
         gstType,
+        notes: profile.invoiceSettings?.defaultNotes || '',
         confirmedByUser: true,
         createdAt: new Date().toISOString()
       };

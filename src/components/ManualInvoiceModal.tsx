@@ -29,15 +29,27 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [customerState, setCustomerState] = useState('Rajasthan');
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
-  const [dueDate, setDueDate] = useState(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+  
+  // Calculate due date based on payment terms
+  const getDueDate = (terms: string) => {
+    const date = new Date();
+    if (terms === '7 days') date.setDate(date.getDate() + 7);
+    else if (terms === '15 days') date.setDate(date.getDate() + 15);
+    else if (terms === '30 days') date.setDate(date.getDate() + 30);
+    return date.toISOString().split('T')[0];
+  };
+
+  const [dueDate, setDueDate] = useState(getDueDate(profile?.invoiceSettings?.paymentTerms || 'Immediate'));
   const [status, setStatus] = useState<'paid' | 'pending' | 'partial'>('pending');
   const [items, setItems] = useState<InvoiceItem[]>([
-    { description: '', qty: 1, rate: 0, taxableAmount: 0, gstRate: 18, gstAmount: 0, total: 0 }
+    { description: '', qty: 1, rate: 0, taxableAmount: 0, gstRate: profile?.invoiceSettings?.defaultGstRate || 18, gstAmount: 0, total: 0 }
   ]);
 
   useEffect(() => {
     if (isOpen && profile) {
       fetchData();
+      setDueDate(getDueDate(profile.invoiceSettings?.paymentTerms || 'Immediate'));
+      setItems([{ description: '', qty: 1, rate: 0, taxableAmount: 0, gstRate: profile.invoiceSettings?.defaultGstRate || 18, gstAmount: 0, total: 0 }]);
     }
   }, [isOpen, profile]);
 
@@ -65,7 +77,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
   };
 
   const handleAddItem = () => {
-    setItems([...items, { description: '', qty: 1, rate: 0, taxableAmount: 0, gstRate: 18, gstAmount: 0, total: 0 }]);
+    setItems([...items, { description: '', qty: 1, rate: 0, taxableAmount: 0, gstRate: profile?.invoiceSettings?.defaultGstRate || 18, gstAmount: 0, total: 0 }]);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -127,8 +139,11 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
       const customer = customers.find(c => c.id === selectedCustomerId);
       const gstType = calculateGSTType(profile.state || 'Rajasthan', customerState);
       
+      const prefix = profile.invoiceSettings?.prefix || 'INV';
+      const randomNum = Math.floor(1000 + Math.random() * 9000);
+
       const newInvoice: Omit<Invoice, 'id'> = {
-        invoiceNumber: `INV-${Math.floor(1000 + Math.random() * 9000)}`,
+        invoiceNumber: `${prefix}-${randomNum}`,
         businessId: profile.uid,
         customerId: selectedCustomerId,
         customerName: customer?.name || 'Unknown',
@@ -145,6 +160,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
         total: totals.total,
         status,
         gstType,
+        notes: profile.invoiceSettings?.defaultNotes || '',
         confirmedByUser: true,
         createdAt: new Date().toISOString()
       };
@@ -243,8 +259,8 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
             
             <div className="space-y-3">
               {items.map((item, index) => (
-                <div key={index} className="glass p-4 rounded-2xl border border-white/5 grid grid-cols-12 gap-4 items-end">
-                  <div className="col-span-12 md:col-span-4 space-y-1">
+                <div key={index} className="glass p-4 rounded-2xl border border-white/5 grid grid-cols-12 gap-3 sm:gap-4 items-end">
+                  <div className="col-span-12 lg:col-span-4 space-y-1">
                     <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Description / Product</label>
                     <div className="flex gap-2">
                       <select 
@@ -263,7 +279,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                       />
                     </div>
                   </div>
-                  <div className="col-span-3 md:col-span-1 space-y-1">
+                  <div className="col-span-4 lg:col-span-1 space-y-1">
                     <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Qty</label>
                     <input 
                       type="number" 
@@ -272,7 +288,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                       className="bg-transparent border-b border-white/10 focus:border-orange-500 outline-none text-sm w-full py-1"
                     />
                   </div>
-                  <div className="col-span-5 md:col-span-2 space-y-1">
+                  <div className="col-span-8 lg:col-span-2 space-y-1">
                     <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Rate (₹)</label>
                     <input 
                       type="number" 
@@ -281,7 +297,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                       className="bg-transparent border-b border-white/10 focus:border-orange-500 outline-none text-sm w-full py-1"
                     />
                   </div>
-                  <div className="col-span-4 md:col-span-2 space-y-1">
+                  <div className="col-span-6 lg:col-span-2 space-y-1">
                     <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">GST %</label>
                     <select 
                       value={item.gstRate}
@@ -295,11 +311,11 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                       <option value={28}>28%</option>
                     </select>
                   </div>
-                  <div className="col-span-8 md:col-span-2 space-y-1">
+                  <div className="col-span-6 lg:col-span-2 space-y-1">
                     <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Total</label>
                     <p className="text-sm font-bold font-mono py-1">₹{item.total.toLocaleString()}</p>
                   </div>
-                  <div className="col-span-4 md:col-span-1 flex justify-end">
+                  <div className="col-span-12 lg:col-span-1 flex justify-end">
                     <button 
                       onClick={() => handleRemoveItem(index)}
                       className="p-2 hover:bg-red-500/10 text-gray-500 hover:text-red-500 rounded-lg transition-colors"

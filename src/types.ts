@@ -18,6 +18,23 @@ export interface UserProfile {
     ifsc: string;
     upiId: string;
   };
+  invoiceSettings?: {
+    prefix: string;
+    startingNumber: number;
+    defaultGstRate: number;
+    paymentTerms: string;
+    defaultNotes: string;
+    autoGenerateNumber: boolean;
+    sendEmailCopy: boolean;
+    showBankDetails: boolean;
+    enableSignature: boolean;
+  };
+  notifications?: {
+    emailAlerts: boolean;
+    whatsappAlerts: boolean;
+    paymentReminders: boolean;
+    monthlyReports: boolean;
+  };
   plan: 'free' | 'pro';
   createdAt: string;
 }
