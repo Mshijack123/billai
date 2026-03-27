@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Sparkles, Loader2, Check, AlertCircle, Edit2, Save, User, Package } from 'lucide-react';
+import { X, Sparkles, Loader2, Check, AlertCircle, Edit2, Save, User, Package, Mic, MicOff } from 'lucide-react';
 import { parseHindiPrompt, ParsedInvoice } from '../lib/gemini';
 import { calculateGST, calculateGSTType, INDIAN_STATES } from '../lib/gst-calculator';
 import { useFirebase } from './FirebaseProvider';
@@ -33,6 +33,7 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
   const [existingCustomers, setExistingCustomers] = useState<Customer[]>([]);
   const [existingProducts, setExistingProducts] = useState<Product[]>([]);
   const [matchedCustomer, setMatchedCustomer] = useState<Customer | null>(null);
+  const [isListening, setIsListening] = useState(false);
 
   useEffect(() => {
     if (isOpen && profile) {
@@ -161,6 +162,45 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
     }
   };
 
+  const toggleListening = () => {
+    if (isListening) {
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Aapka browser voice recognition support nahi karta. Please Chrome use karein.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'hi-IN'; // Default to Hindi
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setPrompt(prev => prev + (prev ? ' ' : '') + transcript);
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -206,7 +246,28 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                 className="space-y-6"
               >
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Prompt Likho</label>
+                  <div className="flex justify-between items-center ml-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Prompt Likho</label>
+                    <button 
+                      onClick={toggleListening}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all",
+                        isListening 
+                          ? "bg-red-500 text-white animate-pulse" 
+                          : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+                      )}
+                    >
+                      {isListening ? (
+                        <>
+                          <MicOff className="w-3 h-3" /> Sun raha hoon...
+                        </>
+                      ) : (
+                        <>
+                          <Mic className="w-3 h-3" /> Bol kar likho
+                        </>
+                      )}
+                    </button>
+                  </div>
                   <textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
