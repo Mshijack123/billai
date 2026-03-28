@@ -59,8 +59,30 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
     setStep('processing');
     setError(null);
     try {
-      const result = await parseHindiPrompt(prompt);
-      setParsedData(result);
+      const result = await parseHindiPrompt(prompt, existingProducts.map(p => ({
+        name: p.name,
+        rate: p.rate,
+        gstRate: p.gstRate
+      })));
+      
+      // Manual fallback matching for products if AI didn't catch it or for extra safety
+      const enrichedItems = result.items.map(item => {
+        const match = existingProducts.find(p => 
+          p.name.toLowerCase() === item.description.toLowerCase() ||
+          item.description.toLowerCase().includes(p.name.toLowerCase())
+        );
+        
+        if (match && (item.rate === 0 || !item.rate)) {
+          return {
+            ...item,
+            rate: match.rate,
+            gst_rate: match.gstRate
+          };
+        }
+        return item;
+      });
+
+      setParsedData({ ...result, items: enrichedItems });
       
       // Try to match customer
       const match = existingCustomers.find(c => 
@@ -417,15 +439,28 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
 
                   <div className="space-y-3">
                     <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Items</p>
-                    {parsedData.items.map((item, i) => (
-                      <div key={i} className="flex justify-between items-center text-sm">
-                        <div className="flex flex-col">
-                          <span className="font-medium">{item.description}</span>
-                          <span className="text-xs text-gray-500">{item.qty} × ₹{item.rate} (GST {item.gst_rate}%)</span>
+                    {parsedData.items.map((item, i) => {
+                      const isMatched = existingProducts.some(p => 
+                        p.name.toLowerCase() === item.description.toLowerCase() ||
+                        item.description.toLowerCase().includes(p.name.toLowerCase())
+                      );
+                      return (
+                        <div key={i} className="flex justify-between items-center text-sm">
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{item.description}</span>
+                              {isMatched && (
+                                <span className="px-1.5 py-0.5 bg-blue-500/10 text-blue-500 text-[8px] font-bold rounded uppercase tracking-tighter">
+                                  Product Matched
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-500">{item.qty} × ₹{item.rate} (GST {item.gst_rate}%)</span>
+                          </div>
+                          <span className="font-mono font-bold">₹{item.qty * item.rate}</span>
                         </div>
-                        <span className="font-mono font-bold">₹{item.qty * item.rate}</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   <div className="pt-4 border-t border-white/5 space-y-2">

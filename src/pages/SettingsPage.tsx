@@ -54,7 +54,12 @@ const SettingsPage = () => {
       autoGenerateNumber: profile?.invoiceSettings?.autoGenerateNumber ?? true,
       sendEmailCopy: profile?.invoiceSettings?.sendEmailCopy ?? true,
       showBankDetails: profile?.invoiceSettings?.showBankDetails ?? true,
-      enableSignature: profile?.invoiceSettings?.enableSignature ?? false
+      enableSignature: profile?.invoiceSettings?.enableSignature ?? false,
+      themeColor: profile?.invoiceSettings?.themeColor || '#f97316',
+      logoUrl: profile?.invoiceSettings?.logoUrl || '',
+      signatureUrl: profile?.invoiceSettings?.signatureUrl || '',
+      fontStyle: profile?.invoiceSettings?.fontStyle || 'sans',
+      templateStyle: profile?.invoiceSettings?.templateStyle || 'modern'
     },
     notifications: {
       emailAlerts: profile?.notifications?.emailAlerts ?? true,
@@ -83,7 +88,6 @@ const SettingsPage = () => {
     { id: 'profile', label: 'Business Profile', icon: User },
     { id: 'invoice', label: 'Invoice Settings', icon: FileText },
     { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'billing', label: 'Billing & Plan', icon: CreditCard },
     { id: 'security', label: 'Security', icon: Shield },
   ];
 
@@ -475,6 +479,98 @@ const SettingsPage = () => {
                       <option>30 days</option>
                     </select>
                   </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Invoice Theme Color</label>
+                    <div className="flex items-center gap-4">
+                      <input 
+                        type="color" 
+                        value={formData.invoiceSettings.themeColor}
+                        onChange={(e) => setFormData({...formData, invoiceSettings: {...formData.invoiceSettings, themeColor: e.target.value}})}
+                        className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 cursor-pointer p-1" 
+                      />
+                      <div className="flex-1">
+                        <input 
+                          type="text" 
+                          value={formData.invoiceSettings.themeColor}
+                          onChange={(e) => setFormData({...formData, invoiceSettings: {...formData.invoiceSettings, themeColor: e.target.value}})}
+                          className="input-dark w-full font-mono uppercase" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Logo URL (Optional)</label>
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <input 
+                          type="text" 
+                          value={formData.invoiceSettings.logoUrl}
+                          onChange={(e) => setFormData({...formData, invoiceSettings: {...formData.invoiceSettings, logoUrl: e.target.value}})}
+                          placeholder="https://example.com/logo.png"
+                          className="input-dark w-full" 
+                        />
+                      </div>
+                      {formData.invoiceSettings.logoUrl && (
+                        <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 p-1 flex items-center justify-center overflow-hidden">
+                          <img 
+                            src={formData.invoiceSettings.logoUrl} 
+                            alt="Logo Preview" 
+                            className="max-w-full max-h-full object-contain"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Signature URL (Optional)</label>
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <input 
+                          type="text" 
+                          value={formData.invoiceSettings.signatureUrl}
+                          onChange={(e) => setFormData({...formData, invoiceSettings: {...formData.invoiceSettings, signatureUrl: e.target.value}})}
+                          placeholder="https://example.com/signature.png"
+                          className="input-dark w-full" 
+                        />
+                      </div>
+                      {formData.invoiceSettings.signatureUrl && (
+                        <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 p-1 flex items-center justify-center overflow-hidden">
+                          <img 
+                            src={formData.invoiceSettings.signatureUrl} 
+                            alt="Signature Preview" 
+                            className="max-w-full max-h-full object-contain invert"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Font Style</label>
+                    <select 
+                      value={formData.invoiceSettings.fontStyle}
+                      onChange={(e) => setFormData({...formData, invoiceSettings: {...formData.invoiceSettings, fontStyle: e.target.value as any}})}
+                      className="input-dark w-full appearance-none"
+                    >
+                      <option value="sans">Modern Sans (Clean)</option>
+                      <option value="serif">Elegant Serif (Professional)</option>
+                      <option value="mono">Technical Mono (Modern)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Template Style</label>
+                    <select 
+                      value={formData.invoiceSettings.templateStyle}
+                      onChange={(e) => setFormData({...formData, invoiceSettings: {...formData.invoiceSettings, templateStyle: e.target.value as any}})}
+                      className="input-dark w-full appearance-none"
+                    >
+                      <option value="modern">Modern (Recommended)</option>
+                      <option value="professional">Professional (Corporate)</option>
+                      <option value="classic">Classic (Standard)</option>
+                      <option value="minimal">Minimal (Clean)</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div className="space-y-1">
@@ -526,6 +622,8 @@ const SettingsPage = () => {
               </form>
             </motion.div>
           )}
+
+
 
           {activeTab === 'security' && (
             <motion.div

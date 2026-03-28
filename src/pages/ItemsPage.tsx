@@ -9,7 +9,8 @@ import {
   MoreVertical,
   Edit3,
   Trash2,
-  X
+  X,
+  FileText
 } from 'lucide-react';
 import { useFirebase } from '../components/FirebaseProvider';
 import { db, collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc } from '../firebase';
@@ -17,6 +18,7 @@ import { Product } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { ManualInvoiceModal } from '../components/ManualInvoiceModal';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -27,6 +29,8 @@ const ItemsPage = () => {
   const [items, setItems] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [selectedProductForInvoice, setSelectedProductForInvoice] = useState<Product | null>(null);
   const [editingItem, setEditingItem] = useState<Product | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -214,6 +218,15 @@ const ItemsPage = () => {
                 </div>
                 <span className="text-lg font-bold font-mono">₹{item.rate.toLocaleString()} <span className="text-[10px] text-gray-500 font-normal">/{item.unit}</span></span>
               </div>
+              <button 
+                onClick={() => {
+                  setSelectedProductForInvoice(item);
+                  setIsInvoiceModalOpen(true);
+                }}
+                className="w-full mt-2 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest hover:bg-orange-500 hover:border-orange-500 hover:text-white transition-all flex items-center justify-center gap-2 group"
+              >
+                <FileText className="w-3 h-3 group-hover:scale-110 transition-transform" /> Invoice Banao
+              </button>
             </div>
           </motion.div>
         ))}
@@ -224,6 +237,19 @@ const ItemsPage = () => {
           </div>
         )}
       </div>
+
+      {/* Manual Invoice Modal */}
+      <ManualInvoiceModal 
+        isOpen={isInvoiceModalOpen}
+        onClose={() => {
+          setIsInvoiceModalOpen(false);
+          setSelectedProductForInvoice(null);
+        }}
+        onSuccess={() => {
+          setShowSuccess(true);
+        }}
+        initialProduct={selectedProductForInvoice || undefined}
+      />
 
       {/* Add/Edit Modal */}
       <AnimatePresence>

@@ -17,9 +17,10 @@ interface ManualInvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  initialProduct?: Product;
 }
 
-export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, onClose, onSuccess }) => {
+export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, onClose, onSuccess, initialProduct }) => {
   const { profile } = useFirebase();
   const { canCreateInvoice } = useInvoiceLimit();
   const [isSaving, setIsSaving] = useState(false);
@@ -41,17 +42,33 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
 
   const [dueDate, setDueDate] = useState(getDueDate(profile?.invoiceSettings?.paymentTerms || 'Immediate'));
   const [status, setStatus] = useState<'paid' | 'pending' | 'partial'>('pending');
-  const [items, setItems] = useState<InvoiceItem[]>([
-    { description: '', qty: 1, rate: 0, taxableAmount: 0, gstRate: profile?.invoiceSettings?.defaultGstRate || 18, gstAmount: 0, total: 0 }
-  ]);
+  const [items, setItems] = useState<InvoiceItem[]>([]);
 
   useEffect(() => {
     if (isOpen && profile) {
       fetchData();
       setDueDate(getDueDate(profile.invoiceSettings?.paymentTerms || 'Immediate'));
-      setItems([{ description: '', qty: 1, rate: 0, taxableAmount: 0, gstRate: profile.invoiceSettings?.defaultGstRate || 18, gstAmount: 0, total: 0 }]);
+      
+      if (initialProduct) {
+        const taxableAmount = initialProduct.rate;
+        const gstType = calculateGSTType(profile.state || 'Rajasthan', customerState);
+        const gst = calculateGST(taxableAmount, initialProduct.gstRate, gstType);
+        
+        setItems([{
+          description: initialProduct.name,
+          qty: 1,
+          rate: initialProduct.rate,
+          taxableAmount: taxableAmount,
+          gstRate: initialProduct.gstRate,
+          gstAmount: gstType === 'CGST_SGST' ? gst.cgst + gst.sgst : gst.igst,
+          total: gst.total,
+          hsn: initialProduct.hsn
+        }]);
+      } else {
+        setItems([{ description: '', qty: 1, rate: 0, taxableAmount: 0, gstRate: profile.invoiceSettings?.defaultGstRate || 18, gstAmount: 0, total: 0 }]);
+      }
     }
-  }, [isOpen, profile]);
+  }, [isOpen, profile, initialProduct]);
 
   useEffect(() => {
     if (!profile) return;
@@ -112,9 +129,27 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
     const product = products.find(p => p.id === productId);
     if (!product) return;
     
-    handleItemChange(index, 'description', product.name);
-    handleItemChange(index, 'rate', product.rate);
-    handleItemChange(index, 'gstRate', product.gstRate);
+    const newItems = [...items];
+    const qty = newItems[index].qty;
+    const rate = product.rate;
+    const gstRate = product.gstRate;
+    
+    const taxableAmount = qty * rate;
+    const gstType = calculateGSTType(profile?.state || 'Rajasthan', customerState);
+    const gst = calculateGST(taxableAmount, gstRate, gstType);
+    
+    newItems[index] = {
+      ...newItems[index],
+      description: product.name,
+      hsn: product.hsn,
+      rate: rate,
+      gstRate: gstRate,
+      taxableAmount: taxableAmount,
+      gstAmount: gstType === 'CGST_SGST' ? gst.cgst + gst.sgst : gst.igst,
+      total: gst.total
+    };
+    
+    setItems(newItems);
   };
 
   const totals = items.reduce((acc, item) => ({

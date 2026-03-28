@@ -14,18 +14,25 @@ export interface ParsedInvoice {
   notes?: string;
 }
 
-export async function parseHindiPrompt(prompt: string): Promise<ParsedInvoice> {
+export async function parseHindiPrompt(prompt: string, existingProducts?: { name: string, rate: number, gstRate: number }[]): Promise<ParsedInvoice> {
+  const productsContext = existingProducts && existingProducts.length > 0
+    ? `\n\nExisting Products (Use these prices and GST rates if items match):
+    ${existingProducts.map(p => `- ${p.name}: ₹${p.rate}, GST ${p.gstRate}%`).join('\n')}`
+    : '';
+
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `Parse the following Hindi/Hinglish billing prompt into a structured JSON format for a GST invoice.
     Prompt: "${prompt}"
+    ${productsContext}
     
     Rules:
     1. Extract customer name.
-    2. Extract items with quantity, rate, and GST rate (default to 18% if not specified).
-    3. Extract payment status (paid, pending, or partial).
-    4. If multiple items, list them all.
-    5. Return ONLY the JSON object.`,
+    2. Extract items with quantity, rate, and GST rate.
+    3. If an item in the prompt matches an "Existing Product" listed above, use its rate and GST rate automatically if not explicitly overridden in the prompt.
+    4. Extract payment status (paid, pending, or partial).
+    5. If multiple items, list them all.
+    6. Return ONLY the JSON object.`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {

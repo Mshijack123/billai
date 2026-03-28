@@ -28,6 +28,11 @@ export interface UserProfile {
     sendEmailCopy: boolean;
     showBankDetails: boolean;
     enableSignature: boolean;
+    themeColor?: string;
+    logoUrl?: string;
+    signatureUrl?: string;
+    fontStyle?: 'sans' | 'serif' | 'mono';
+    templateStyle?: 'classic' | 'modern' | 'minimal' | 'professional';
   };
   notifications?: {
     emailAlerts: boolean;
