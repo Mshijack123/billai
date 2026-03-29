@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useFirebase } from '../components/FirebaseProvider';
 import { usePricing } from '../components/PricingContext';
-import { db, collection, query, where, onSnapshot, getDocs } from '../firebase';
+import { db, collection, query, where, onSnapshot, getDocs, handleFirestoreError, OperationType } from '../firebase';
 import { Invoice, DashboardStats } from '../types';
 import { AIInvoiceModal } from '../components/AIInvoiceModal';
 import { ManualInvoiceModal } from '../components/ManualInvoiceModal';
@@ -163,6 +163,8 @@ const Dashboard = () => {
           },
         ],
       });
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'invoices');
     });
 
     return () => unsubscribe();

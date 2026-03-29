@@ -29,15 +29,23 @@ async function startServer() {
   // Instamojo Configuration
   const INSTAMOJO_API_KEY = process.env.INSTAMOJO_API_KEY;
   const INSTAMOJO_AUTH_TOKEN = process.env.INSTAMOJO_AUTH_TOKEN;
-  const INSTAMOJO_URL = process.env.NODE_ENV === "production" 
-    ? "https://www.instamojo.com/api/1.1/" 
-    : "https://test.instamojo.com/api/1.1/";
+  const INSTAMOJO_SANDBOX = process.env.INSTAMOJO_SANDBOX === "true";
+  const INSTAMOJO_URL = process.env.INSTAMOJO_URL || (INSTAMOJO_SANDBOX || process.env.NODE_ENV !== "production" 
+    ? "https://test.instamojo.com/api/1.1/" 
+    : "https://www.instamojo.com/api/1.1/");
 
   // API Routes
   app.post("/api/payments/create", async (req, res) => {
     const { amount, purpose, buyer_name, email, phone, userId } = req.body;
 
+    if (!INSTAMOJO_API_KEY || !INSTAMOJO_AUTH_TOKEN) {
+      console.error("Instamojo credentials missing");
+      return res.status(500).json({ error: "Payment gateway not configured" });
+    }
+
     try {
+      const appUrl = process.env.APP_URL?.replace(/\/$/, ""); // Remove trailing slash if any
+      
       const response = await axios.post(
         `${INSTAMOJO_URL}payment-requests/`,
         {
@@ -46,8 +54,8 @@ async function startServer() {
           buyer_name,
           email,
           phone,
-          redirect_url: `${process.env.APP_URL}/api/payments/callback?userId=${userId}`,
-          webhook: `${process.env.APP_URL}/api/payments/webhook`,
+          redirect_url: `${appUrl}/api/payments/callback?userId=${userId}`,
+          webhook: `${appUrl}/api/payments/webhook`,
           allow_repeated_payments: false,
         },
         {
@@ -60,8 +68,16 @@ async function startServer() {
 
       res.json(response.data);
     } catch (error: any) {
-      console.error("Instamojo Error:", error.response?.data || error.message);
-      res.status(500).json({ error: "Failed to create payment request" });
+      console.error("Instamojo Error Details:", {
+        message: error.message,
+        data: error.response?.data,
+        status: error.response?.status,
+        url: INSTAMOJO_URL
+      });
+      res.status(500).json({ 
+        error: "Failed to create payment request",
+        details: error.response?.data || error.message
+      });
     }
   });
 

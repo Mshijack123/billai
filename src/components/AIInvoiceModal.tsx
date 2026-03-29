@@ -6,7 +6,7 @@ import { calculateGST, calculateGSTType, INDIAN_STATES } from '../lib/gst-calcul
 import { getLocalDateString, calculateDueDate } from '../lib/date-utils';
 import { useFirebase } from './FirebaseProvider';
 import { useInvoiceLimit } from '../hooks/useInvoiceLimit';
-import { db, collection, addDoc, serverTimestamp, query, where, getDocs } from '../firebase';
+import { db, collection, addDoc, serverTimestamp, query, where, getDocs, handleFirestoreError, OperationType } from '../firebase';
 import { Invoice, InvoiceItem, Customer, Product } from '../types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -52,7 +52,7 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
       const pSnap = await getDocs(query(collection(db, 'products'), where('businessId', '==', profile.uid)));
       setExistingProducts(pSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
     } catch (err) {
-      console.error('Error fetching data:', err);
+      handleFirestoreError(err, OperationType.LIST, 'customers/products');
     }
   };
 
@@ -165,6 +165,15 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
         customerGstin: matchedCustomer?.gstin || '',
         customerState: customerState,
         customerAddress: matchedCustomer?.address || '',
+        // Save business details at the time of creation
+        businessName: profile.businessName || profile.displayName || '',
+        businessAddress: profile.address || '',
+        businessGstin: profile.gstin || '',
+        businessPhone: profile.phone || '',
+        businessEmail: profile.email || '',
+        businessBankDetails: profile.bankDetails || null,
+        businessLogoUrl: profile.invoiceSettings?.logoUrl || '',
+        businessSignatureUrl: profile.invoiceSettings?.signatureUrl || '',
         date: getLocalDateString(currentDate),
         dueDate: calculateDueDate(currentDate, profile.invoiceSettings?.paymentTerms || 'Immediate'),
         items: invoiceItems,
@@ -197,7 +206,7 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
       onSuccess();
       onClose();
     } catch (err) {
-      console.error(err);
+      handleFirestoreError(err, OperationType.WRITE, 'invoices');
       setError('Failed to save invoice. Please try again.');
     } finally {
       setIsSaving(false);

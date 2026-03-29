@@ -85,6 +85,20 @@ export interface Invoice {
   customerGstin?: string;
   customerState?: string;
   customerAddress?: string;
+  // Business details at the time of creation
+  businessName?: string;
+  businessAddress?: string;
+  businessGstin?: string;
+  businessPhone?: string;
+  businessEmail?: string;
+  businessBankDetails?: {
+    bankName: string;
+    accountNumber: string;
+    ifsc: string;
+    upiId: string;
+  };
+  businessLogoUrl?: string;
+  businessSignatureUrl?: string;
   date: string;
   dueDate: string;
   items: InvoiceItem[];

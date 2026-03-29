@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Plus, Trash2, Save, Loader2, User, Search, Package } from 'lucide-react';
 import { useFirebase } from './FirebaseProvider';
 import { useInvoiceLimit } from '../hooks/useInvoiceLimit';
-import { db, collection, addDoc, serverTimestamp, query, where, getDocs } from '../firebase';
+import { db, collection, addDoc, serverTimestamp, query, where, getDocs, handleFirestoreError, OperationType } from '../firebase';
 import { Invoice, InvoiceItem, Customer, Product } from '../types';
 import { calculateGST, calculateGSTType, INDIAN_STATES } from '../lib/gst-calculator';
 import { getLocalDateString, calculateDueDate } from '../lib/date-utils';
@@ -96,11 +96,15 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
 
   const fetchData = async () => {
     if (!profile) return;
-    const cSnap = await getDocs(query(collection(db, 'customers'), where('businessId', '==', profile.uid)));
-    setCustomers(cSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer)));
-    
-    const pSnap = await getDocs(query(collection(db, 'products'), where('businessId', '==', profile.uid)));
-    setProducts(pSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
+    try {
+      const cSnap = await getDocs(query(collection(db, 'customers'), where('businessId', '==', profile.uid)));
+      setCustomers(cSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer)));
+      
+      const pSnap = await getDocs(query(collection(db, 'products'), where('businessId', '==', profile.uid)));
+      setProducts(pSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.LIST, 'customers/products');
+    }
   };
 
   const handleAddItem = () => {
@@ -193,6 +197,15 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
         customerGstin: customer?.gstin || '',
         customerState: customerState,
         customerAddress: customer?.address || '',
+        // Save business details at the time of creation
+        businessName: profile.businessName || profile.displayName || '',
+        businessAddress: profile.address || '',
+        businessGstin: profile.gstin || '',
+        businessPhone: profile.phone || '',
+        businessEmail: profile.email || '',
+        businessBankDetails: profile.bankDetails || null,
+        businessLogoUrl: profile.invoiceSettings?.logoUrl || '',
+        businessSignatureUrl: profile.invoiceSettings?.signatureUrl || '',
         date: invoiceDate,
         dueDate: dueDate,
         items,
@@ -225,7 +238,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
       onSuccess();
       onClose();
     } catch (err) {
-      console.error(err);
+      handleFirestoreError(err, OperationType.WRITE, 'invoices');
       alert('Failed to save invoice');
     } finally {
       setIsSaving(false);

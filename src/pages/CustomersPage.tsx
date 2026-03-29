@@ -14,7 +14,7 @@ import {
   Users
 } from 'lucide-react';
 import { useFirebase } from '../components/FirebaseProvider';
-import { db, collection, query, where, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc } from '../firebase';
+import { db, collection, query, where, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc, handleFirestoreError, OperationType } from '../firebase';
 import { Customer, Invoice } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { INDIAN_STATES } from '../lib/gst-calculator';
@@ -25,8 +25,23 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const CustomerCard = ({ customer, onClick, onDelete }: { customer: Customer, onClick: () => void, onDelete: (id: string, e: React.MouseEvent) => void }) => {
-  const initials = customer.name.split(' ').map(n => n[0]).join('').toUpperCase();
+const getInitials = (name: string) => {
+  if (!name) return '?';
+  return name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2);
+};
+
+const CustomerCard = ({ 
+  customer, 
+  outstanding,
+  onClick, 
+  onDelete 
+}: { 
+  customer: Customer, 
+  outstanding: number,
+  onClick: () => void, 
+  onDelete: (id: string, e: React.MouseEvent) => void 
+}) => {
+  const initials = getInitials(customer.name);
   const colors = ['bg-orange-500', 'bg-purple-500', 'bg-blue-500', 'bg-teal-500', 'bg-pink-500', 'bg-indigo-500'];
   const color = colors[customer.name.length % colors.length];
 
@@ -64,7 +79,9 @@ const CustomerCard = ({ customer, onClick, onDelete }: { customer: Customer, onC
         </div>
         <div className="flex justify-between items-center text-xs">
           <span className="text-gray-500">Outstanding</span>
-          <span className="font-mono font-bold text-amber-500">₹0</span>
+          <span className={cn("font-mono font-bold", outstanding > 0 ? "text-amber-500" : "text-green-500")}>
+            ₹{outstanding.toLocaleString()}
+          </span>
         </div>
       </div>
 
@@ -86,10 +103,12 @@ const CustomerCard = ({ customer, onClick, onDelete }: { customer: Customer, onC
 const CustomersPage = () => {
   const { profile } = useFirebase();
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerInvoices, setCustomerInvoices] = useState<Invoice[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -119,6 +138,22 @@ const CustomersPage = () => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer));
       setCustomers(docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'customers');
+    });
+
+    return () => unsubscribe();
+  }, [profile]);
+
+  useEffect(() => {
+    if (!profile) return;
+
+    const q = query(collection(db, 'invoices'), where('businessId', '==', profile.uid));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice));
+      setAllInvoices(docs);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'invoices');
     });
 
     return () => unsubscribe();
@@ -138,6 +173,8 @@ const CustomersPage = () => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice));
       setCustomerInvoices(docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'invoices');
     });
 
     return () => unsubscribe();
@@ -147,6 +184,7 @@ const CustomersPage = () => {
     e.preventDefault();
     if (!profile) return;
 
+    setIsSaving(true);
     try {
       await addDoc(collection(db, 'customers'), {
         ...formData,
@@ -165,6 +203,8 @@ const CustomersPage = () => {
       });
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -173,6 +213,31 @@ const CustomersPage = () => {
     c.phone.includes(searchTerm) ||
     c.businessName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Calculate stats
+  const totalOutstanding = allInvoices.reduce((sum, inv) => {
+    const balance = inv.balanceAmount !== undefined ? inv.balanceAmount : (inv.status === 'paid' ? 0 : inv.total);
+    return sum + balance;
+  }, 0);
+  const totalRevenue = allInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
+  const avgOrderValue = allInvoices.length > 0 ? totalRevenue / allInvoices.length : 0;
+  
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const activeThisMonth = new Set(
+    allInvoices
+      .filter(inv => new Date(inv.date) >= startOfMonth)
+      .map(inv => inv.customerId)
+  ).size;
+
+  const getCustomerOutstanding = (customerId: string) => {
+    return allInvoices
+      .filter(inv => inv.customerId === customerId)
+      .reduce((sum, inv) => {
+        const balance = inv.balanceAmount !== undefined ? inv.balanceAmount : (inv.status === 'paid' ? 0 : inv.total);
+        return sum + balance;
+      }, 0);
+  };
 
   return (
     <div className="space-y-8">
@@ -200,9 +265,9 @@ const CustomersPage = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: 'Total Customers', value: customers.length },
-          { label: 'Active This Month', value: '23' },
-          { label: 'Outstanding', value: '₹18,200', color: 'text-amber-500' },
-          { label: 'Avg Order', value: '₹3,400' }
+          { label: 'Active This Month', value: activeThisMonth },
+          { label: 'Outstanding', value: `₹${totalOutstanding.toLocaleString()}`, color: 'text-amber-500' },
+          { label: 'Avg Order', value: `₹${Math.round(avgOrderValue).toLocaleString()}` }
         ].map((stat, i) => (
           <div key={i} className="glass p-4 rounded-2xl border border-white/5">
             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">{stat.label}</p>
@@ -217,6 +282,7 @@ const CustomersPage = () => {
           <CustomerCard 
             key={customer.id} 
             customer={customer} 
+            outstanding={getCustomerOutstanding(customer.id)}
             onClick={() => setSelectedCustomer(customer)} 
             onDelete={handleDelete}
           />
@@ -255,7 +321,7 @@ const CustomersPage = () => {
 
               <div className="flex flex-col items-center text-center mb-10">
                 <div className="w-24 h-24 rounded-[2rem] bg-orange-500 flex items-center justify-center font-bold text-white text-3xl mb-4 shadow-xl shadow-orange-500/20">
-                  {selectedCustomer.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                  {getInitials(selectedCustomer.name)}
                 </div>
                 <h3 className="text-2xl font-bold mb-1">{selectedCustomer.name}</h3>
                 <p className="text-gray-500 text-sm mb-6">{selectedCustomer.phone}</p>
@@ -274,7 +340,7 @@ const CustomersPage = () => {
                   </div>
                   <div className="glass p-4 rounded-2xl border border-white/5">
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Outstanding</p>
-                    <p className="text-xl font-bold text-amber-500">₹0</p>
+                    <p className="text-xl font-bold text-amber-500">₹{getCustomerOutstanding(selectedCustomer.id).toLocaleString()}</p>
                   </div>
                 </div>
 

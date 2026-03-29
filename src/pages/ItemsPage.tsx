@@ -13,7 +13,7 @@ import {
   FileText
 } from 'lucide-react';
 import { useFirebase } from '../components/FirebaseProvider';
-import { db, collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc } from '../firebase';
+import { db, collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, handleFirestoreError, OperationType } from '../firebase';
 import { Product } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
@@ -33,6 +33,7 @@ const ItemsPage = () => {
   const [selectedProductForInvoice, setSelectedProductForInvoice] = useState<Product | null>(null);
   const [editingItem, setEditingItem] = useState<Product | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -58,6 +59,8 @@ const ItemsPage = () => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
       setItems(docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'products');
     });
 
     return () => unsubscribe();
@@ -67,6 +70,7 @@ const ItemsPage = () => {
     e.preventDefault();
     if (!profile) return;
 
+    setIsSaving(true);
     try {
       if (editingItem) {
         await updateDoc(doc(db, 'products', editingItem.id), {
@@ -87,6 +91,8 @@ const ItemsPage = () => {
       closeModal();
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsSaving(false);
     }
   };
 

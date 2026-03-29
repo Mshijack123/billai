@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useFirebase } from '../components/FirebaseProvider';
 import { usePricing } from '../components/PricingContext';
-import { db, collection, query, where, onSnapshot, updateDoc, doc } from '../firebase';
+import { db, collection, query, where, onSnapshot, updateDoc, doc, handleFirestoreError, OperationType } from '../firebase';
 import { Invoice } from '../types';
 import { AIInvoiceModal } from '../components/AIInvoiceModal';
 import { ManualInvoiceModal } from '../components/ManualInvoiceModal';
@@ -50,6 +50,8 @@ const InvoicesPage = () => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice));
       setInvoices(docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'invoices');
     });
 
     return () => unsubscribe();

@@ -31,9 +31,10 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
       } else {
         alert('Failed to initiate payment. Please try again.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Payment Error:', error);
-      alert('Something went wrong. Please try again.');
+      const errorMessage = error.response?.data?.details || error.response?.data?.error || 'Something went wrong. Please try again.';
+      alert(`Payment Error:\n${errorMessage}`);
     } finally {
       setLoading(false);
     }

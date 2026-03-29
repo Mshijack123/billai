@@ -8,7 +8,7 @@ import {
   Info
 } from 'lucide-react';
 import { useFirebase } from '../components/FirebaseProvider';
-import { db, collection, query, where, onSnapshot } from '../firebase';
+import { db, collection, query, where, onSnapshot, handleFirestoreError, OperationType } from '../firebase';
 import { Invoice } from '../types';
 import { exportToCSV } from '../lib/csv-export';
 import html2canvas from 'html2canvas';
@@ -130,6 +130,8 @@ const ReportsPage = () => {
           },
         ],
       });
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'invoices');
     });
 
     return () => unsubscribe();

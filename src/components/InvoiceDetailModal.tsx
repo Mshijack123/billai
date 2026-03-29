@@ -324,11 +324,11 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
                 {/* Minimal Header */}
                 <div className="flex justify-between items-start mb-16 border-b-2 border-black pb-8">
                   <div>
-                    <h1 className="text-4xl font-light tracking-widest uppercase mb-4">{profile.businessName || profile.displayName || 'Your Business Name'}</h1>
+                    <h1 className="text-4xl font-light tracking-widest uppercase mb-4">{invoice.businessName || profile.businessName || profile.displayName || 'Your Business Name'}</h1>
                     <div className="text-[10px] text-gray-500 space-y-1">
-                      <p>{profile.address || 'Your Business Address'}</p>
-                      <p>GSTIN: {profile.gstin || 'N/A'}</p>
-                      <p>PH: {profile.phone || 'N/A'}</p>
+                      <p>{invoice.businessAddress || profile.address || 'Your Business Address'}</p>
+                      <p>GSTIN: {invoice.businessGstin || profile.gstin || 'N/A'}</p>
+                      <p>PH: {invoice.businessPhone || profile.phone || 'N/A'}</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -422,9 +422,9 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
                   <div className="text-[10px] text-gray-400 space-y-4">
                     <div>
                       <h5 className="font-bold text-black mb-1">Payment Info</h5>
-                      <p>{profile.bankDetails?.bankName}</p>
-                      <p>A/C: {profile.bankDetails?.accountNumber}</p>
-                      <p>IFSC: {profile.bankDetails?.ifsc}</p>
+                      <p>{invoice.businessBankDetails?.bankName || profile.bankDetails?.bankName}</p>
+                      <p>A/C: {invoice.businessBankDetails?.accountNumber || profile.bankDetails?.accountNumber}</p>
+                      <p>IFSC: {invoice.businessBankDetails?.ifsc || profile.bankDetails?.ifsc}</p>
                     </div>
                     <p className="italic">"{numberToWords(Math.floor(invoice.total))} Only"</p>
                   </div>
@@ -456,9 +456,9 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
               <div className="flex flex-col h-full border-4 border-double theme-border p-4">
                 {/* Classic Header */}
                 <div className="text-center mb-10 border-b theme-border pb-6">
-                  <h1 className="text-3xl font-bold uppercase mb-2">{profile.businessName || profile.displayName || 'Your Business Name'}</h1>
-                  <p className="text-sm text-gray-600">{profile.address || 'Your Business Address'}</p>
-                  <p className="text-xs text-gray-500 mt-1">GSTIN: {profile.gstin || 'N/A'} | Phone: {profile.phone || 'N/A'}</p>
+                  <h1 className="text-3xl font-bold uppercase mb-2">{invoice.businessName || profile.businessName || profile.displayName || 'Your Business Name'}</h1>
+                  <p className="text-sm text-gray-600">{invoice.businessAddress || profile.address || 'Your Business Address'}</p>
+                  <p className="text-xs text-gray-500 mt-1">GSTIN: {invoice.businessGstin || profile.gstin || 'N/A'} | Phone: {invoice.businessPhone || profile.phone || 'N/A'}</p>
                 </div>
 
                 <div className="text-center mb-8">
@@ -521,9 +521,9 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
                   <div className="space-y-4">
                     <div className="border theme-border p-3 rounded">
                       <p className="text-[10px] font-bold uppercase mb-2">Bank Details:</p>
-                      <p className="text-xs">Bank: {profile.bankDetails?.bankName}</p>
-                      <p className="text-xs">A/C: {profile.bankDetails?.accountNumber}</p>
-                      <p className="text-xs">IFSC: {profile.bankDetails?.ifsc}</p>
+                      <p className="text-xs">Bank: {invoice.businessBankDetails?.bankName || profile.bankDetails?.bankName}</p>
+                      <p className="text-xs">A/C: {invoice.businessBankDetails?.accountNumber || profile.bankDetails?.accountNumber}</p>
+                      <p className="text-xs">IFSC: {invoice.businessBankDetails?.ifsc || profile.bankDetails?.ifsc}</p>
                     </div>
                     <p className="text-xs italic">Amount in words: {numberToWords(Math.floor(invoice.total))} Only</p>
                   </div>
@@ -565,25 +565,25 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
                 {/* Professional Header */}
                 <div className="flex justify-between items-start mb-12 border-b-4 border-black pb-8">
                   <div className="flex items-center gap-6">
-                    {profile.invoiceSettings?.logoUrl ? (
+                    {(invoice.businessLogoUrl || profile.invoiceSettings?.logoUrl) ? (
                       <img 
-                        src={profile.invoiceSettings.logoUrl} 
+                        src={invoice.businessLogoUrl || profile.invoiceSettings?.logoUrl} 
                         alt="Logo" 
                         className="w-24 h-24 object-contain"
                         referrerPolicy="no-referrer"
                       />
                     ) : (
                       <div className="w-24 h-24 bg-black flex items-center justify-center font-bold text-white text-4xl">
-                        {profile.businessName?.charAt(0) || 'B'}
+                        {(invoice.businessName || profile.businessName)?.charAt(0) || 'B'}
                       </div>
                     )}
                     <div>
-                      <h1 className="text-3xl font-bold uppercase tracking-tight mb-1">{profile.businessName || profile.displayName || 'Your Business Name'}</h1>
-                      <p className="text-xs text-gray-600 max-w-[300px] leading-relaxed">{profile.address || 'Your Business Address'}</p>
+                      <h1 className="text-3xl font-bold uppercase tracking-tight mb-1">{invoice.businessName || profile.businessName || profile.displayName || 'Your Business Name'}</h1>
+                      <p className="text-xs text-gray-600 max-w-[300px] leading-relaxed">{invoice.businessAddress || profile.address || 'Your Business Address'}</p>
                       <div className="mt-2 text-[10px] font-bold space-y-0.5">
-                        <p>GSTIN: {profile.gstin || 'N/A'}</p>
-                        <p>PH: {profile.phone || 'N/A'}</p>
-                        <p>EMAIL: {profile.email || 'N/A'}</p>
+                        <p>GSTIN: {invoice.businessGstin || profile.gstin || 'N/A'}</p>
+                        <p>PH: {invoice.businessPhone || profile.phone || 'N/A'}</p>
+                        <p>EMAIL: {invoice.businessEmail || profile.email || 'N/A'}</p>
                       </div>
                     </div>
                   </div>
@@ -739,9 +739,9 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
                   </div>
                   <div className="text-center">
                     <div className="w-48 h-20 border-b-2 border-black mb-2 flex items-center justify-center overflow-hidden">
-                      {profile.invoiceSettings?.signatureUrl ? (
+                      {(invoice.businessSignatureUrl || profile.invoiceSettings?.signatureUrl) ? (
                         <img 
-                          src={profile.invoiceSettings.signatureUrl} 
+                          src={invoice.businessSignatureUrl || profile.invoiceSettings?.signatureUrl} 
                           alt="Signature" 
                           className="max-w-full max-h-full object-contain"
                           referrerPolicy="no-referrer"
@@ -759,27 +759,27 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
                 {/* Modern Header (Default) */}
                 <div className="flex justify-between items-start mb-12">
                   <div className="flex items-start gap-6">
-                    {profile.invoiceSettings?.logoUrl ? (
+                    {(invoice.businessLogoUrl || profile.invoiceSettings?.logoUrl) ? (
                       <img 
-                        src={profile.invoiceSettings.logoUrl} 
+                        src={invoice.businessLogoUrl || profile.invoiceSettings?.logoUrl} 
                         alt="Logo" 
                         className="w-20 h-20 object-contain rounded-xl"
                         referrerPolicy="no-referrer"
                       />
                     ) : (
                       <div className="w-20 h-20 theme-bg rounded-2xl flex items-center justify-center font-bold text-white text-3xl shadow-lg">
-                        {profile.businessName?.charAt(0) || 'B'}
+                        {(invoice.businessName || profile.businessName)?.charAt(0) || 'B'}
                       </div>
                     )}
                     <div>
-                      <h1 className="text-2xl font-bold mb-1 tracking-tight">{profile.businessName || profile.displayName || 'Your Business Name'}</h1>
-                      <p className="text-[11px] text-gray-500 max-w-[300px] leading-relaxed font-medium">{profile.address || 'Your Business Address'}</p>
+                      <h1 className="text-2xl font-bold mb-1 tracking-tight">{invoice.businessName || profile.businessName || profile.displayName || 'Your Business Name'}</h1>
+                      <p className="text-[11px] text-gray-500 max-w-[300px] leading-relaxed font-medium">{invoice.businessAddress || profile.address || 'Your Business Address'}</p>
                       <div className="mt-4 space-y-1">
                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                          <span className="w-1 h-1 bg-gray-300 rounded-full" /> GSTIN: <span className="text-black font-mono">{profile.gstin || 'N/A'}</span>
+                          <span className="w-1 h-1 bg-gray-300 rounded-full" /> GSTIN: <span className="text-black font-mono">{invoice.businessGstin || profile.gstin || 'N/A'}</span>
                         </p>
                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                          <span className="w-1 h-1 bg-gray-300 rounded-full" /> Phone: <span className="text-black">{profile.phone || 'N/A'}</span>
+                          <span className="w-1 h-1 bg-gray-300 rounded-full" /> Phone: <span className="text-black">{invoice.businessPhone || profile.phone || 'N/A'}</span>
                         </p>
                       </div>
                     </div>
@@ -990,15 +990,15 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
                   </div>
                   <div className="text-center">
                     <div className="w-40 h-12 border-b border-gray-200 mb-2 flex items-center justify-center overflow-hidden">
-                      {profile.invoiceSettings?.signatureUrl ? (
+                      {(invoice.businessSignatureUrl || profile.invoiceSettings?.signatureUrl) ? (
                         <img 
-                          src={profile.invoiceSettings.signatureUrl} 
+                          src={invoice.businessSignatureUrl || profile.invoiceSettings?.signatureUrl} 
                           alt="Signature" 
                           className="max-w-full max-h-full object-contain"
                           referrerPolicy="no-referrer"
                         />
                       ) : (
-                        <span className="italic text-gray-200 text-[10px]">{profile.businessName}</span>
+                        <span className="italic text-gray-200 text-[10px]">{invoice.businessName || profile.businessName}</span>
                       )}
                     </div>
                     <p className="text-[8px] font-bold uppercase tracking-widest text-gray-500">Authorized Signatory</p>

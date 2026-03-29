@@ -36,39 +36,46 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
 
       if (user) {
-        // First check if profile exists, if not create it
-        const profileDoc = await getDoc(doc(db, 'users', user.uid));
-        if (!profileDoc.exists()) {
-          const newProfile: UserProfile = {
-            uid: user.uid,
-            email: user.email || '',
-            displayName: user.displayName || '',
-            plan: 'free',
-            createdAt: new Date().toISOString(),
-            invoiceSettings: {
-              prefix: 'INV',
-              startingNumber: 1,
-              defaultGstRate: 18,
-              paymentTerms: 'Due on Receipt',
-              defaultNotes: 'Thank you for your business!',
-              autoGenerateNumber: true,
-              sendEmailCopy: false,
-              showBankDetails: true,
-              enableSignature: false,
-              templateStyle: 'modern'
-            }
-          };
-          await setDoc(doc(db, 'users', user.uid), newProfile);
-        }
+        try {
+          // First check if profile exists, if not create it
+          const profileDoc = await getDoc(doc(db, 'users', user.uid));
 
-        // Listen for real-time updates
-        unsubscribeProfile = onSnapshot(doc(db, 'users', user.uid), (doc) => {
-          if (doc.exists()) {
-            setProfile(doc.data() as UserProfile);
+          if (!profileDoc.exists()) {
+            const newProfile: UserProfile = {
+              uid: user.uid,
+              email: user.email || '',
+              displayName: user.displayName || '',
+              plan: 'free',
+              createdAt: new Date().toISOString(),
+              invoiceSettings: {
+                prefix: 'INV',
+                startingNumber: 1,
+                defaultGstRate: 18,
+                paymentTerms: 'Due on Receipt',
+                defaultNotes: 'Thank you for your business!',
+                autoGenerateNumber: true,
+                sendEmailCopy: false,
+                showBankDetails: true,
+                enableSignature: false,
+                templateStyle: 'modern'
+              }
+            };
+            await setDoc(doc(db, 'users', user.uid), newProfile);
           }
+
+          // Listen for real-time updates
+          unsubscribeProfile = onSnapshot(doc(db, 'users', user.uid), (doc) => {
+            if (doc.exists()) {
+              setProfile(doc.data() as UserProfile);
+            }
+            setLoading(false);
+            setIsAuthReady(true);
+          });
+        } catch (error) {
+          console.error("Firebase initialization error:", error);
           setLoading(false);
           setIsAuthReady(true);
-        });
+        }
       } else {
         setProfile(null);
         setLoading(false);
