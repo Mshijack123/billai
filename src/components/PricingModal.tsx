@@ -13,31 +13,11 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
   const { profile } = useFirebase();
   const [loading, setLoading] = useState(false);
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = () => {
     if (!profile) return;
-    setLoading(true);
-    try {
-      const response = await axios.post('/api/payments/create', {
-        amount: '499.00', // Example price for PRO
-        purpose: 'BillAI PRO Plan Upgrade',
-        buyer_name: profile.displayName,
-        email: profile.email,
-        phone: profile.phone || '',
-        userId: profile.uid
-      });
-
-      if (response.data.payment_request && response.data.payment_request.longurl) {
-        window.location.href = response.data.payment_request.longurl;
-      } else {
-        alert('Failed to initiate payment. Please try again.');
-      }
-    } catch (error: any) {
-      console.error('Payment Error:', error);
-      const errorMessage = error.response?.data?.details || error.response?.data?.error || 'Something went wrong. Please try again.';
-      alert(`Payment Error:\n${errorMessage}`);
-    } finally {
-      setLoading(false);
-    }
+    const message = `Hi, I want to upgrade my BillAI account to PRO. My email is: ${profile.email}`;
+    const whatsappUrl = `https://wa.me/917023936809?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   if (!isOpen) return null;
@@ -97,21 +77,14 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
 
           <div className="pt-4">
             <div className="text-4xl font-bold mb-1">₹499<span className="text-lg text-gray-500 font-normal">/lifetime</span></div>
-            <p className="text-xs text-gray-500 mb-6">One-time payment, no hidden charges</p>
+            <p className="text-xs text-gray-500 mb-6">Contact admin for manual payment & activation</p>
             
             <button 
               onClick={handleUpgrade}
-              disabled={loading}
               className="w-full btn-orange flex items-center justify-center gap-3 py-4 text-lg"
             >
-              {loading ? (
-                <Loader2 className="w-6 h-6 animate-spin" />
-              ) : (
-                <>
-                  <CreditCard className="w-6 h-6" />
-                  Pay with Instamojo
-                </>
-              )}
+              <CreditCard className="w-6 h-6" />
+              Contact Admin to Upgrade
             </button>
           </div>
 

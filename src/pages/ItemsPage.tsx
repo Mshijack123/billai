@@ -13,6 +13,8 @@ import {
   FileText
 } from 'lucide-react';
 import { useFirebase } from '../components/FirebaseProvider';
+import { usePricing } from '../components/PricingContext';
+import { useInvoiceLimit } from '../hooks/useInvoiceLimit';
 import { db, collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, handleFirestoreError, OperationType } from '../firebase';
 import { Product } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -26,6 +28,8 @@ function cn(...inputs: ClassValue[]) {
 
 const ItemsPage = () => {
   const { profile } = useFirebase();
+  const { openPricing } = usePricing();
+  const { canCreateInvoice } = useInvoiceLimit();
   const [items, setItems] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -226,6 +230,10 @@ const ItemsPage = () => {
               </div>
               <button 
                 onClick={() => {
+                  if (!canCreateInvoice) {
+                    openPricing();
+                    return;
+                  }
                   setSelectedProductForInvoice(item);
                   setIsInvoiceModalOpen(true);
                 }}

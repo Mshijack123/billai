@@ -46,6 +46,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               email: user.email || '',
               displayName: user.displayName || '',
               plan: 'free',
+              role: 'user',
               createdAt: new Date().toISOString(),
               invoiceSettings: {
                 prefix: 'INV',

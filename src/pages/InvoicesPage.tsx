@@ -13,10 +13,12 @@ import {
   Calendar,
   Check,
   X,
-  Share2
+  Share2,
+  AlertCircle
 } from 'lucide-react';
 import { useFirebase } from '../components/FirebaseProvider';
 import { usePricing } from '../components/PricingContext';
+import { useInvoiceLimit } from '../hooks/useInvoiceLimit';
 import { db, collection, query, where, onSnapshot, updateDoc, doc, handleFirestoreError, OperationType } from '../firebase';
 import { Invoice } from '../types';
 import { AIInvoiceModal } from '../components/AIInvoiceModal';
@@ -34,6 +36,7 @@ function cn(...inputs: ClassValue[]) {
 const InvoicesPage = () => {
   const { profile } = useFirebase();
   const { openPricing } = usePricing();
+  const { invoiceCount, limit, canCreateInvoice, remaining } = useInvoiceLimit();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,6 +44,7 @@ const InvoicesPage = () => {
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [autoDownload, setAutoDownload] = useState(false);
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
 
   useEffect(() => {
@@ -154,8 +158,54 @@ const InvoicesPage = () => {
     partial: invoices.filter(i => i.status === 'partial').length,
   };
 
+  const handleCreateManual = () => {
+    if (!canCreateInvoice) {
+      openPricing();
+      return;
+    }
+    setIsManualModalOpen(true);
+  };
+
+  const handleCreateAI = () => {
+    if (!canCreateInvoice) {
+      openPricing();
+      return;
+    }
+    setIsAIModalOpen(true);
+  };
+
   return (
     <div className="space-y-8">
+      {/* Invoice Limit Warning */}
+      {invoiceCount >= limit * 0.8 && profile?.plan === 'free' && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className={cn(
+            "p-4 rounded-2xl flex items-center justify-between gap-4",
+            invoiceCount >= limit ? "bg-red-500/10 border border-red-500/20" : "bg-orange-500/10 border border-orange-500/20"
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "w-10 h-10 rounded-xl flex items-center justify-center",
+              invoiceCount >= limit ? "bg-red-500/20" : "bg-orange-500/20"
+            )}>
+              <AlertCircle className={cn("w-5 h-5", invoiceCount >= limit ? "text-red-500" : "text-orange-500")} />
+            </div>
+            <div>
+              <p className={cn("text-sm font-bold", invoiceCount >= limit ? "text-red-500" : "text-orange-500")}>
+                {invoiceCount >= limit ? "Invoice Limit Reached!" : "Limit Khatam Hone Wali Hai!"}
+              </p>
+              <p className="text-xs text-gray-400">
+                Aapne {invoiceCount}/{limit} invoices use kar liye hain. {remaining} baaki hain.
+              </p>
+            </div>
+          </div>
+          <button onClick={openPricing} className="text-xs font-bold text-orange-500 hover:underline">Upgrade Karein →</button>
+        </motion.div>
+      )}
+
       {/* Top Bar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="flex-1 flex flex-col sm:flex-row gap-4">
@@ -194,13 +244,13 @@ const InvoicesPage = () => {
         </div>
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => setIsManualModalOpen(true)}
+            onClick={handleCreateManual}
             className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm font-bold hover:bg-white/10 transition-all flex items-center gap-2"
           >
             <Plus className="w-4 h-4" /> Manual
           </button>
           <button 
-            onClick={() => setIsAIModalOpen(true)}
+            onClick={handleCreateAI}
             className="btn-orange flex items-center justify-center gap-2"
           >
             <Plus className="w-5 h-5" /> Naya Invoice
@@ -327,7 +377,10 @@ const InvoicesPage = () => {
                         <Share2 className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={() => setSelectedInvoice(inv)}
+                        onClick={() => {
+                          setSelectedInvoice(inv);
+                          setAutoDownload(true);
+                        }}
                         className="p-2 hover:bg-white/10 rounded-lg transition-colors" 
                         title="Download PDF"
                       >
@@ -473,9 +526,14 @@ const InvoicesPage = () => {
 
       <InvoiceDetailModal 
         isOpen={!!selectedInvoice}
-        onClose={() => setSelectedInvoice(null)}
+        onClose={() => {
+          setSelectedInvoice(null);
+          setAutoDownload(false);
+        }}
         invoice={selectedInvoice}
         profile={profile}
+        autoDownload={autoDownload}
+        onDownloadComplete={() => setAutoDownload(false)}
       />
     </div>
   );

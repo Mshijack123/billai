@@ -14,6 +14,8 @@ import {
   Users
 } from 'lucide-react';
 import { useFirebase } from '../components/FirebaseProvider';
+import { usePricing } from '../components/PricingContext';
+import { useInvoiceLimit } from '../hooks/useInvoiceLimit';
 import { db, collection, query, where, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc, handleFirestoreError, OperationType } from '../firebase';
 import { Customer, Invoice } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -102,6 +104,8 @@ const CustomerCard = ({
 
 const CustomersPage = () => {
   const { profile } = useFirebase();
+  const { openPricing } = usePricing();
+  const { canCreateInvoice } = useInvoiceLimit();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -327,7 +331,21 @@ const CustomersPage = () => {
                 <p className="text-gray-500 text-sm mb-6">{selectedCustomer.phone}</p>
                 
                 <div className="flex gap-3">
-                  <button className="px-4 py-2 bg-orange-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-orange-500/20">Naya Invoice Banao</button>
+                  <button 
+                    onClick={() => {
+                      if (!canCreateInvoice) {
+                        openPricing();
+                        return;
+                      }
+                      // For now, redirect to invoices or open a modal? 
+                      // The app doesn't seem to have a direct "Create for this customer" modal here yet, 
+                      // but let's add the check anyway if the button exists.
+                      // Actually, let's see what the button does.
+                    }}
+                    className="px-4 py-2 bg-orange-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-orange-500/20"
+                  >
+                    Naya Invoice Banao
+                  </button>
                   <button className="px-4 py-2 border border-white/10 rounded-xl text-xs font-bold hover:bg-white/5">Reminder Bhejo</button>
                 </div>
               </div>

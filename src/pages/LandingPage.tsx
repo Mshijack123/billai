@@ -210,7 +210,7 @@ const LandingPage = () => {
           <div className="glass p-10 rounded-[2.5rem] border-2 border-orange-500 relative overflow-hidden">
             <div className="absolute top-6 right-6 bg-orange-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">Most Popular 🔥</div>
             <h3 className="text-2xl font-bold mb-2">PRO</h3>
-            <p className="text-4xl font-display font-bold mb-6">₹299 <span className="text-lg text-gray-500 font-normal">/month</span></p>
+            <p className="text-4xl font-display font-bold mb-6">₹499 <span className="text-lg text-gray-500 font-normal">/lifetime</span></p>
             <ul className="space-y-4 mb-10 text-gray-400">
               <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-orange-500" /> Unlimited invoices</li>
               <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-orange-500" /> GST reports + export</li>

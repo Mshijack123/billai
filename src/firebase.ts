@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { getFirestore, collection as fsCollection, doc as fsDoc, setDoc as fsSetDoc, getDoc as fsGetDoc, query as fsQuery, where as fsWhere, onSnapshot as fsOnSnapshot, addDoc as fsAddDoc, updateDoc as fsUpdateDoc, deleteDoc as fsDeleteDoc, serverTimestamp as fsServerTimestamp, getDocs as fsGetDocs, Timestamp, Query, DocumentReference, CollectionReference, DocumentData, SnapshotListenOptions, QuerySnapshot, DocumentSnapshot, FirestoreError } from 'firebase/firestore';
+import { getFirestore, collection as fsCollection, doc as fsDoc, setDoc as fsSetDoc, getDoc as fsGetDoc, query as fsQuery, where as fsWhere, orderBy as fsOrderBy, onSnapshot as fsOnSnapshot, addDoc as fsAddDoc, updateDoc as fsUpdateDoc, deleteDoc as fsDeleteDoc, serverTimestamp as fsServerTimestamp, getDocs as fsGetDocs, Timestamp, Query, DocumentReference, CollectionReference, DocumentData, SnapshotListenOptions, QuerySnapshot, DocumentSnapshot, FirestoreError } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 export enum OperationType {
@@ -64,6 +64,7 @@ export const collection = fsCollection;
 export const doc = fsDoc;
 export const query = fsQuery;
 export const where = fsWhere;
+export const orderBy = fsOrderBy;
 export const serverTimestamp = fsServerTimestamp;
 
 export const setDoc = async (reference: DocumentReference<DocumentData>, data: any, options?: any) => {

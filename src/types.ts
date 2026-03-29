@@ -41,6 +41,7 @@ export interface UserProfile {
     monthlyReports: boolean;
   };
   plan: 'free' | 'pro';
+  role?: 'admin' | 'user';
   createdAt: string;
 }
 

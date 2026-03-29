@@ -12,7 +12,8 @@ import {
   Bell,
   Search,
   Menu,
-  X
+  X,
+  Shield
 } from 'lucide-react';
 import { useFirebase } from './FirebaseProvider';
 import { auth, signOut } from '../firebase';
@@ -58,14 +59,23 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const navItems = [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/invoices', icon: FileText, label: 'Invoices' },
-    { to: '/customers', icon: Users, label: 'Customers' },
-    { to: '/items', icon: Package, label: 'Items' },
-    { to: '/reports', icon: BarChart3, label: 'Reports' },
-    { to: '/settings', icon: Settings, label: 'Settings' },
-  ];
+  const isAdmin = profile?.email === "mshijacknew@gmail.com" || profile?.role === 'admin';
+  const isSuperAdmin = profile?.email === "mshijacknew@gmail.com";
+
+  const navItems = isSuperAdmin 
+    ? [{ to: '/admin', icon: Shield, label: 'Admin Panel' }]
+    : [
+        { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+        { to: '/invoices', icon: FileText, label: 'Invoices' },
+        { to: '/customers', icon: Users, label: 'Customers' },
+        { to: '/items', icon: Package, label: 'Items' },
+        { to: '/reports', icon: BarChart3, label: 'Reports' },
+        { to: '/settings', icon: Settings, label: 'Settings' },
+      ];
+
+  if (isAdmin && !isSuperAdmin) {
+    navItems.push({ to: '/admin', icon: Shield, label: 'Admin Panel' });
+  }
 
   return (
     <div className="min-h-screen bg-[#060810] text-white flex">
@@ -87,7 +97,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
         </nav>
 
         <div className="mt-auto pt-6 border-t border-white/5">
-          {profile?.plan === 'free' && (
+          {profile?.plan === 'free' && !isSuperAdmin && (
             <div className="bg-gradient-to-br from-orange-500/20 to-orange-600/5 p-4 rounded-2xl border border-orange-500/20 mb-6">
               <p className="text-sm font-semibold text-orange-500 mb-1">Upgrade to PRO</p>
               <p className="text-xs text-gray-400 mb-3">Get unlimited invoices & GST reports.</p>

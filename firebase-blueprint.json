@@ -22,6 +22,7 @@
           }
         },
         "plan": { "type": "string", "enum": ["free", "pro"] },
+        "role": { "type": "string", "enum": ["admin", "user"] },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["uid", "email", "displayName", "plan"]

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useFirebase } from '../components/FirebaseProvider';
 import { useInvoiceLimit } from '../hooks/useInvoiceLimit';
+import { usePricing } from '../components/PricingContext';
 import { db, doc, updateDoc, OperationType, handleFirestoreError } from '../firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { INDIAN_STATES } from '../lib/gst-calculator';
@@ -27,6 +28,7 @@ function cn(...inputs: ClassValue[]) {
 const SettingsPage = () => {
   const { profile } = useFirebase();
   const { invoiceCount, limit, remaining } = useInvoiceLimit();
+  const { openPricing } = usePricing();
   const [activeTab, setActiveTab] = useState<'profile' | 'invoice' | 'notifications' | 'billing' | 'security'>('profile');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -452,10 +454,10 @@ const SettingsPage = () => {
 
                   <div className="flex flex-col sm:flex-row items-center gap-6">
                     <div className="text-center sm:text-left">
-                      <p className="text-4xl font-display font-bold">₹299 <span className="text-lg text-gray-500 font-normal">/month</span></p>
-                      <p className="text-[10px] text-gray-600 uppercase tracking-widest font-bold">Billed monthly</p>
+                      <p className="text-4xl font-display font-bold">₹499 <span className="text-lg text-gray-500 font-normal">/lifetime</span></p>
+                      <p className="text-[10px] text-gray-600 uppercase tracking-widest font-bold">One-time payment</p>
                     </div>
-                    <button className="btn-orange px-10">Pro upgrade karo →</button>
+                    <button onClick={openPricing} className="btn-orange px-10">Pro upgrade karo →</button>
                   </div>
                 </div>
               </div>

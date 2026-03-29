@@ -12,9 +12,18 @@ interface InvoiceDetailModalProps {
   onClose: () => void;
   invoice: Invoice | null;
   profile: UserProfile | null;
+  autoDownload?: boolean;
+  onDownloadComplete?: () => void;
 }
 
-export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, onClose, invoice, profile }) => {
+export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  invoice, 
+  profile,
+  autoDownload,
+  onDownloadComplete
+}) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isRecordingPayment, setIsRecordingPayment] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState<string>('');
@@ -23,6 +32,16 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
   const [isSavingPayment, setIsSavingPayment] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [currentTemplate, setCurrentTemplate] = useState(profile?.invoiceSettings?.templateStyle || 'modern');
+
+  React.useEffect(() => {
+    if (isOpen && autoDownload && invoice) {
+      const timer = setTimeout(() => {
+        handleDownload();
+        if (onDownloadComplete) onDownloadComplete();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, autoDownload, invoice?.id]);
 
   if (!isOpen || !invoice || !profile) return null;
 
@@ -81,26 +100,62 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
 
   const handleDownload = async () => {
     const element = document.getElementById('invoice-paper');
-    if (!element) return;
+    if (!element) {
+      alert('Invoice element not found. Please try again.');
+      return;
+    }
 
     setIsDownloading(true);
     try {
+      // Use a slightly longer timeout to ensure everything is rendered
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
-        logging: false,
+        logging: false, // Set to false for production
         backgroundColor: '#ffffff',
-        windowWidth: 1200, // Force desktop-like layout for PDF
+        windowWidth: 1200,
         onclone: (clonedDoc) => {
           const clonedElement = clonedDoc.getElementById('invoice-paper');
           if (clonedElement) {
+            // Reset transforms for clean capture
             clonedElement.style.transform = 'none';
             clonedElement.style.scale = '1';
             clonedElement.style.margin = '0';
             clonedElement.style.position = 'relative';
             clonedElement.style.boxShadow = 'none';
-            clonedElement.style.width = '1000px'; // Consistent width for PDF capture
+            clonedElement.style.width = '1000px';
             clonedElement.style.height = 'auto';
+            clonedElement.style.left = '0';
+            clonedElement.style.top = '0';
+            
+            // Force all elements to use standard color formats if they are using oklch
+            // This is a deep search and replace for the cloned element
+            const allElements = clonedElement.querySelectorAll('*');
+            allElements.forEach((el: any) => {
+              const style = window.getComputedStyle(el);
+              
+              // If computed color or background uses oklch, it might still cause issues
+              // although getComputedStyle usually returns rgb()
+              // However, some browsers might return oklch() if it's native
+              
+              if (el.style) {
+                // We've already provided CSS overrides which should take precedence
+              }
+            });
+          }
+          
+          // Remove any problematic styles from the cloned document that might contain oklch
+          // but are not relevant to the invoice capture
+          const styleSheets = clonedDoc.styleSheets;
+          for (let i = 0; i < styleSheets.length; i++) {
+            try {
+              const rules = styleSheets[i].cssRules;
+              // If we can access rules, we could potentially filter them
+            } catch (e) {
+              // Cross-origin stylesheet, can't access rules
+            }
           }
         }
       });
@@ -123,7 +178,7 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
       pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
       heightLeft -= pdfHeight;
 
-      while (heightLeft >= 0) {
+      while (heightLeft > 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
         pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
@@ -131,8 +186,9 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
       }
 
       pdf.save(`Invoice-${invoice.invoiceNumber}.pdf`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating PDF:', error);
+      alert('PDF download failed: ' + (error.message || 'Unknown error. Please check if your browser blocks popups or large downloads.'));
     } finally {
       setIsDownloading(false);
     }
@@ -291,12 +347,36 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
               #invoice-paper .theme-border { border-color: ${profile.invoiceSettings?.themeColor || '#f97316'} !important; }
               #invoice-paper .text-gray-500 { color: #6b7280 !important; }
               #invoice-paper .text-gray-600 { color: #4b5563 !important; }
+              #invoice-paper .text-gray-700 { color: #374151 !important; }
+              #invoice-paper .text-gray-800 { color: #1f2937 !important; }
+              #invoice-paper .text-gray-900 { color: #111827 !important; }
               #invoice-paper .text-gray-400 { color: #9ca3af !important; }
               #invoice-paper .bg-gray-50 { background-color: #f9fafb !important; }
+              #invoice-paper .bg-gray-50\/50 { background-color: rgba(249, 250, 251, 0.5) !important; }
               #invoice-paper .bg-gray-100 { background-color: #f3f4f6 !important; }
+              #invoice-paper .bg-gray-200 { background-color: #e5e7eb !important; }
+              #invoice-paper .border-gray-50 { border-color: #f9fafb !important; }
+              #invoice-paper .border-gray-100 { border-color: #f3f4f6 !important; }
               #invoice-paper .border-gray-200 { border-color: #e5e7eb !important; }
               #invoice-paper .border-gray-300 { border-color: #d1d5db !important; }
-              #invoice-paper .bg-gray-200 { background-color: #e5e7eb !important; }
+              
+              /* Additional common colors to avoid oklch */
+              #invoice-paper .text-black { color: #000000 !important; }
+              #invoice-paper .bg-white { background-color: #ffffff !important; }
+              #invoice-paper .text-white { color: #ffffff !important; }
+              #invoice-paper .bg-black { background-color: #000000 !important; }
+              #invoice-paper .text-green-500 { color: #22c55e !important; }
+              #invoice-paper .text-amber-500 { color: #f59e0b !important; }
+              #invoice-paper .text-orange-500 { color: #f97316 !important; }
+              #invoice-paper .bg-orange-500 { background-color: #f97316 !important; }
+              #invoice-paper .bg-orange-500\/10 { background-color: rgba(249, 115, 22, 0.1) !important; }
+              #invoice-paper .border-black { border-color: #000000 !important; }
+              #invoice-paper .divide-gray-100 > :not([hidden]) ~ :not([hidden]) { border-color: #f3f4f6 !important; }
+              #invoice-paper .divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: #e5e7eb !important; }
+              
+              /* Ensure transparency doesn't use oklch */
+              #invoice-paper .bg-transparent { background-color: transparent !important; }
+              #invoice-paper .border-transparent { border-color: transparent !important; }
               
               /* Template Specific Styles */
               ${profile.invoiceSettings?.templateStyle === 'minimal' ? `

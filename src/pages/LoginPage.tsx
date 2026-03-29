@@ -20,33 +20,8 @@ const LoginPage = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-
-      // Check if user profile exists, if not create one
-      // This is a common pattern for social login
-      // We'll use a simplified version here
-      const userDoc = await setDoc(doc(db, 'users', user.uid), {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName || 'User',
-        businessName: '',
-        plan: 'free',
-        createdAt: new Date().toISOString(),
-        invoiceSettings: {
-          prefix: 'INV',
-          startingNumber: 1,
-          defaultGstRate: 18,
-          paymentTerms: 'Due on Receipt',
-          defaultNotes: 'Thank you for your business!',
-          autoGenerateNumber: true,
-          sendEmailCopy: false,
-          showBankDetails: true,
-          enableSignature: false,
-          templateStyle: 'modern'
-        }
-      }, { merge: true });
-
+      await signInWithPopup(auth, googleProvider);
+      // FirebaseProvider will handle profile creation if it doesn't exist
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Google Login error:', error);
@@ -89,13 +64,15 @@ const LoginPage = () => {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       const user = result.user;
 
-      // Create user profile in Firestore
+      // Create user profile in Firestore with initial data
+      // FirebaseProvider will also try to create it, but this one has the businessName
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
         email: user.email,
         displayName: name,
         businessName: businessName,
         plan: 'free',
+        role: 'user',
         createdAt: new Date().toISOString(),
         invoiceSettings: {
           prefix: 'INV',

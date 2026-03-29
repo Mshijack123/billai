@@ -30,9 +30,14 @@ service cloud.firestore {
     // User Profiles
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId) && 
-        request.resource.data.plan == resource.data.plan; // Plan can't be changed by user
+      allow create: if isOwner(userId) && 
+                      request.resource.data.plan == 'free' && 
+                      request.resource.data.role == 'user';
+      allow update: if isAdmin() || (
+        isOwner(userId) && 
+        request.resource.data.plan == resource.data.plan && 
+        request.resource.data.role == resource.data.role
+      );
     }
 
     // Customers
