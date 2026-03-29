@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Download, Share2, Edit3, Printer, Loader2, CreditCard, History, Plus, Calendar as CalendarIcon, IndianRupee, Layout } from 'lucide-react';
 import { Invoice, UserProfile, Payment } from '../types';
 import { numberToWords } from '../lib/utils';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import { db, doc, updateDoc } from '../firebase';
 
@@ -124,102 +124,34 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
 
     setIsDownloading(true);
     try {
-      // Pre-fetch and sanitize styles to remove oklch which html2canvas doesn't support
-      const styleElements = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
-      const sanitizedStyles = await Promise.all(styleElements.map(async (el) => {
-        try {
-          const href = (el as HTMLLinkElement).href;
-          // Only fetch same-origin stylesheets to avoid CORS issues
-          if (href.startsWith(window.location.origin) || href.startsWith('/')) {
-            const resp = await fetch(href);
-            if (resp.ok) {
-              const text = await resp.text();
-              // Replace oklch with a safe fallback color
-              return text.replace(/oklch\([^)]+\)/g, '#71717a');
-            }
-          }
-        } catch (e) {
-          console.warn('Failed to pre-fetch stylesheet:', e);
-        }
-        return null;
-      }));
-
       // Use a slightly longer timeout to ensure everything is rendered
       await new Promise(resolve => setTimeout(resolve, 800));
 
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
+      // Use html-to-image instead of html2canvas for better modern CSS support
+      const imgData = await toPng(element, {
+        quality: 1.0,
+        pixelRatio: 2,
         backgroundColor: '#ffffff',
-        windowWidth: 1200,
-        onclone: (clonedDoc) => {
-          // Remove all original link stylesheets in the clone to prevent parsing errors
-          const links = clonedDoc.querySelectorAll('link[rel="stylesheet"]');
-          links.forEach(l => l.remove());
-
-          // Inject sanitized styles
-          sanitizedStyles.forEach(css => {
-            if (css) {
-              const s = clonedDoc.createElement('style');
-              s.innerHTML = css;
-              clonedDoc.head.appendChild(s);
-            }
-          });
-
-          // Sanitize existing style tags
-          const styleTags = clonedDoc.getElementsByTagName('style');
-          for (let i = 0; i < styleTags.length; i++) {
-            try {
-              styleTags[i].innerHTML = styleTags[i].innerHTML.replace(/oklch\([^)]+\)/g, '#71717a');
-            } catch (e) {
-              console.warn('Failed to sanitize style tag:', e);
-            }
-          }
-
-          // Also sanitize inline styles
-          const allElements = clonedDoc.getElementsByTagName('*');
-          for (let i = 0; i < allElements.length; i++) {
-            const el = allElements[i] as HTMLElement;
-            if (el.style && el.style.cssText) {
-              el.style.cssText = el.style.cssText.replace(/oklch\([^)]+\)/g, '#71717a');
-            }
-          }
-
-          const clonedElement = clonedDoc.getElementById('invoice-paper');
-          if (clonedElement) {
-            // Move the style tag to head for better rendering in cloned doc
-            const styleTag = clonedElement.querySelector('style');
-            if (styleTag) {
-              const headStyle = clonedDoc.createElement('style');
-              headStyle.innerHTML = styleTag.innerHTML;
-              clonedDoc.head.appendChild(headStyle);
-              styleTag.remove();
-            }
-
-            // Reset transforms for clean capture
-            clonedElement.style.transform = 'none';
-            clonedElement.style.scale = '1';
-            clonedElement.style.margin = '0';
-            clonedElement.style.position = 'relative';
-            clonedElement.style.boxShadow = 'none';
-            clonedElement.style.width = '1000px';
-            clonedElement.style.height = 'auto';
-            clonedElement.style.left = '0';
-            clonedElement.style.top = '0';
-            clonedElement.style.display = 'block';
-            clonedElement.style.visibility = 'visible';
-            clonedElement.style.opacity = '1';
-          }
+        style: {
+          transform: 'none',
+          scale: '1',
+          margin: '0',
+          position: 'relative',
+          boxShadow: 'none',
+          width: '1000px',
+          height: 'auto',
+          left: '0',
+          top: '0',
+          display: 'block',
+          visibility: 'visible',
+          opacity: '1'
         }
       });
       
-      if (!canvas) {
-        throw new Error('Canvas generation failed');
+      if (!imgData) {
+        throw new Error('Image generation failed');
       }
 
-      const imgData = canvas.toDataURL('image/png', 1.0);
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',

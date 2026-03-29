@@ -11,7 +11,7 @@ import { useFirebase } from '../components/FirebaseProvider';
 import { db, collection, query, where, onSnapshot, handleFirestoreError, OperationType } from '../firebase';
 import { Invoice } from '../types';
 import { exportToCSV } from '../lib/csv-export';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import { motion } from 'motion/react';
 import {
@@ -203,78 +203,25 @@ const ReportsPage = () => {
 
     setIsExportingPDF(true);
     try {
-      // Pre-fetch and sanitize styles to remove oklch which html2canvas doesn't support
-      const styleElements = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
-      const sanitizedStyles = await Promise.all(styleElements.map(async (el) => {
-        try {
-          const href = (el as HTMLLinkElement).href;
-          // Only fetch same-origin stylesheets to avoid CORS issues
-          if (href.startsWith(window.location.origin) || href.startsWith('/')) {
-            const resp = await fetch(href);
-            if (resp.ok) {
-              const text = await resp.text();
-              // Replace oklch with a safe fallback color
-              return text.replace(/oklch\([^)]+\)/g, '#71717a');
-            }
-          }
-        } catch (e) {
-          console.warn('Failed to pre-fetch stylesheet:', e);
-        }
-        return null;
-      }));
-
-      // Small delay to ensure charts are fully rendered
+      // Use a slightly longer timeout to ensure everything is rendered
       await new Promise(resolve => setTimeout(resolve, 800));
 
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
+      // Use html-to-image instead of html2canvas for better modern CSS support
+      const imgData = await toPng(element, {
+        quality: 1.0,
+        pixelRatio: 2,
         backgroundColor: '#0C1020',
-        onclone: (clonedDoc) => {
-          // Remove all original link stylesheets in the clone to prevent parsing errors
-          const links = clonedDoc.querySelectorAll('link[rel="stylesheet"]');
-          links.forEach(l => l.remove());
-
-          // Inject sanitized styles
-          sanitizedStyles.forEach(css => {
-            if (css) {
-              const s = clonedDoc.createElement('style');
-              s.innerHTML = css;
-              clonedDoc.head.appendChild(s);
-            }
-          });
-
-          // Sanitize existing style tags
-          const styleTags = clonedDoc.getElementsByTagName('style');
-          for (let i = 0; i < styleTags.length; i++) {
-            try {
-              styleTags[i].innerHTML = styleTags[i].innerHTML.replace(/oklch\([^)]+\)/g, '#71717a');
-            } catch (e) {
-              console.warn('Failed to sanitize style tag:', e);
-            }
-          }
-
-          // Also sanitize inline styles
-          const allElements = clonedDoc.getElementsByTagName('*');
-          for (let i = 0; i < allElements.length; i++) {
-            const el = allElements[i] as HTMLElement;
-            if (el.style && el.style.cssText) {
-              el.style.cssText = el.style.cssText.replace(/oklch\([^)]+\)/g, '#71717a');
-            }
-          }
-
-          const clonedElement = clonedDoc.getElementById('report-content');
-          if (clonedElement) {
-            clonedElement.style.padding = '40px';
-            clonedElement.style.backgroundColor = '#0C1020';
-            clonedElement.style.color = '#ffffff';
-          }
+        style: {
+          padding: '40px',
+          backgroundColor: '#0C1020',
+          color: '#ffffff'
         }
       });
       
-      const imgData = canvas.toDataURL('image/png');
+      if (!imgData) {
+        throw new Error('Image generation failed');
+      }
+
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
