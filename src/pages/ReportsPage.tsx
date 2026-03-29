@@ -203,9 +203,13 @@ const ReportsPage = () => {
 
     setIsExportingPDF(true);
     try {
+      // Small delay to ensure charts are fully rendered
+      await new Promise(resolve => setTimeout(resolve, 800));
+
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
+        allowTaint: true,
         logging: false,
         backgroundColor: '#0C1020',
         onclone: (clonedDoc) => {
@@ -226,6 +230,13 @@ const ReportsPage = () => {
             if (el.style && el.style.cssText) {
               el.style.cssText = el.style.cssText.replace(/oklch\([^)]+\)/g, '#71717a');
             }
+          }
+
+          const clonedElement = clonedDoc.getElementById('report-content');
+          if (clonedElement) {
+            clonedElement.style.padding = '40px';
+            clonedElement.style.backgroundColor = '#0C1020';
+            clonedElement.style.color = '#ffffff';
           }
         }
       });

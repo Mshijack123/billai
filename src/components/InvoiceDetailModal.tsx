@@ -125,12 +125,12 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
     setIsDownloading(true);
     try {
       // Use a slightly longer timeout to ensure everything is rendered
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 800));
 
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
-        allowTaint: false,
+        allowTaint: true,
         logging: false,
         backgroundColor: '#ffffff',
         windowWidth: 1200,
@@ -177,6 +177,7 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
             clonedElement.style.top = '0';
             clonedElement.style.display = 'block';
             clonedElement.style.visibility = 'visible';
+            clonedElement.style.opacity = '1';
           }
         }
       });
@@ -700,6 +701,7 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
                         alt="Logo" 
                         className="w-24 h-24 object-contain"
                         referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
                       />
                     ) : (
                       <div className="w-24 h-24 bg-black flex items-center justify-center font-bold text-white text-4xl">
@@ -894,6 +896,7 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
                         alt="Logo" 
                         className="w-20 h-20 object-contain rounded-xl"
                         referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
                       />
                     ) : (
                       <div className="w-20 h-20 theme-bg rounded-2xl flex items-center justify-center font-bold text-white text-3xl shadow-lg">
