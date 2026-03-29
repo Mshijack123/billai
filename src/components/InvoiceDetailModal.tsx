@@ -124,6 +124,26 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
 
     setIsDownloading(true);
     try {
+      // Pre-fetch and sanitize styles to remove oklch which html2canvas doesn't support
+      const styleElements = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+      const sanitizedStyles = await Promise.all(styleElements.map(async (el) => {
+        try {
+          const href = (el as HTMLLinkElement).href;
+          // Only fetch same-origin stylesheets to avoid CORS issues
+          if (href.startsWith(window.location.origin) || href.startsWith('/')) {
+            const resp = await fetch(href);
+            if (resp.ok) {
+              const text = await resp.text();
+              // Replace oklch with a safe fallback color
+              return text.replace(/oklch\([^)]+\)/g, '#71717a');
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to pre-fetch stylesheet:', e);
+        }
+        return null;
+      }));
+
       // Use a slightly longer timeout to ensure everything is rendered
       await new Promise(resolve => setTimeout(resolve, 800));
 
@@ -135,7 +155,20 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
         backgroundColor: '#ffffff',
         windowWidth: 1200,
         onclone: (clonedDoc) => {
-          // Sanitize oklch colors which html2canvas doesn't support
+          // Remove all original link stylesheets in the clone to prevent parsing errors
+          const links = clonedDoc.querySelectorAll('link[rel="stylesheet"]');
+          links.forEach(l => l.remove());
+
+          // Inject sanitized styles
+          sanitizedStyles.forEach(css => {
+            if (css) {
+              const s = clonedDoc.createElement('style');
+              s.innerHTML = css;
+              clonedDoc.head.appendChild(s);
+            }
+          });
+
+          // Sanitize existing style tags
           const styleTags = clonedDoc.getElementsByTagName('style');
           for (let i = 0; i < styleTags.length; i++) {
             try {
