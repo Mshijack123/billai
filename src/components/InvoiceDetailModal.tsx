@@ -118,8 +118,27 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
         backgroundColor: '#ffffff',
         windowWidth: 1200,
         onclone: (clonedDoc) => {
+          // Sanitize oklch colors which html2canvas doesn't support
+          const styleTags = clonedDoc.getElementsByTagName('style');
+          for (let i = 0; i < styleTags.length; i++) {
+            try {
+              styleTags[i].innerHTML = styleTags[i].innerHTML.replace(/oklch\([^)]+\)/g, '#71717a');
+            } catch (e) {
+              console.warn('Failed to sanitize style tag:', e);
+            }
+          }
+
           const clonedElement = clonedDoc.getElementById('invoice-paper');
           if (clonedElement) {
+            // Move the style tag to head for better rendering in cloned doc
+            const styleTag = clonedElement.querySelector('style');
+            if (styleTag) {
+              const headStyle = clonedDoc.createElement('style');
+              headStyle.innerHTML = styleTag.innerHTML;
+              clonedDoc.head.appendChild(headStyle);
+              styleTag.remove();
+            }
+
             // Reset transforms for clean capture
             clonedElement.style.transform = 'none';
             clonedElement.style.scale = '1';
@@ -132,15 +151,6 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
             clonedElement.style.top = '0';
             clonedElement.style.display = 'block';
             clonedElement.style.visibility = 'visible';
-            
-            // Force all elements to use standard color formats if they are using oklch
-            const allElements = clonedElement.querySelectorAll('*');
-            allElements.forEach((el: any) => {
-              const style = window.getComputedStyle(el);
-              if (style.color.includes('oklch')) el.style.color = '#1f2937';
-              if (style.backgroundColor.includes('oklch')) el.style.backgroundColor = 'transparent';
-              if (style.borderColor.includes('oklch')) el.style.borderColor = '#e5e7eb';
-            });
           }
         }
       });
@@ -343,10 +353,15 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
               #invoice-paper .text-gray-800 { color: #1f2937 !important; }
               #invoice-paper .text-gray-900 { color: #111827 !important; }
               #invoice-paper .text-gray-400 { color: #9ca3af !important; }
+              #invoice-paper .text-gray-300 { color: #d1d5db !important; }
+              #invoice-paper .text-gray-200 { color: #e5e7eb !important; }
+              #invoice-paper .text-gray-100 { color: #f3f4f6 !important; }
               #invoice-paper .bg-gray-50 { background-color: #f9fafb !important; }
-              #invoice-paper .bg-gray-50\/50 { background-color: rgba(249, 250, 251, 0.5) !important; }
+              #invoice-paper .bg-gray-50\/50 { background-color: #f9fafb !important; }
+              #invoice-paper .bg-gray-50\/30 { background-color: #f9fafb !important; }
               #invoice-paper .bg-gray-100 { background-color: #f3f4f6 !important; }
               #invoice-paper .bg-gray-200 { background-color: #e5e7eb !important; }
+              #invoice-paper .bg-gray-900 { background-color: #111827 !important; }
               #invoice-paper .border-gray-50 { border-color: #f9fafb !important; }
               #invoice-paper .border-gray-100 { border-color: #f3f4f6 !important; }
               #invoice-paper .border-gray-200 { border-color: #e5e7eb !important; }
@@ -358,10 +373,13 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
               #invoice-paper .text-white { color: #ffffff !important; }
               #invoice-paper .bg-black { background-color: #000000 !important; }
               #invoice-paper .text-green-500 { color: #22c55e !important; }
+              #invoice-paper .text-green-600 { color: #16a34a !important; }
               #invoice-paper .text-amber-500 { color: #f59e0b !important; }
+              #invoice-paper .text-amber-600 { color: #d97706 !important; }
               #invoice-paper .text-orange-500 { color: #f97316 !important; }
+              #invoice-paper .text-orange-600 { color: #ea580c !important; }
               #invoice-paper .bg-orange-500 { background-color: #f97316 !important; }
-              #invoice-paper .bg-orange-500\/10 { background-color: rgba(249, 115, 22, 0.1) !important; }
+              #invoice-paper .bg-orange-500\/10 { background-color: #fff7ed !important; }
               #invoice-paper .border-black { border-color: #000000 !important; }
               #invoice-paper .divide-gray-100 > :not([hidden]) ~ :not([hidden]) { border-color: #f3f4f6 !important; }
               #invoice-paper .divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: #e5e7eb !important; }
@@ -371,18 +389,30 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
               #invoice-paper .border-transparent { border-color: transparent !important; }
               
               /* Template Specific Styles */
-              ${profile.invoiceSettings?.templateStyle === 'minimal' ? `
+              ${currentTemplate === 'minimal' ? `
                 #invoice-paper .rounded-2xl, #invoice-paper .rounded-3xl, #invoice-paper .rounded-[2rem] { border-radius: 0 !important; }
                 #invoice-paper .bg-gray-50 { background-color: transparent !important; border-bottom: 1px solid #eee !important; }
-              ` : ''}
-              
-              ${profile.invoiceSettings?.templateStyle === 'classic' ? `
-                #invoice-paper .rounded-2xl, #invoice-paper .rounded-3xl, #invoice-paper .rounded-[2rem] { border-radius: 4px !important; }
-                #invoice-paper .theme-bg { background-color: #333 !important; }
+                #invoice-paper .theme-bg { background-color: transparent !important; }
                 #invoice-paper .theme-text { color: #000 !important; }
               ` : ''}
+              
+              ${currentTemplate === 'classic' ? `
+                #invoice-paper .rounded-2xl, #invoice-paper .rounded-3xl, #invoice-paper .rounded-[2rem] { border-radius: 4px !important; }
+                #invoice-paper .theme-bg { background-color: #333 !important; color: white !important; }
+                #invoice-paper .theme-text { color: #000 !important; }
+                #invoice-paper .theme-border { border-color: #333 !important; }
+              ` : ''}
+              
+              ${currentTemplate === 'modern' ? `
+                #invoice-paper .rounded-2xl { border-radius: 1rem !important; }
+                #invoice-paper .rounded-3xl { border-radius: 1.5rem !important; }
+                #invoice-paper .rounded-[2rem] { border-radius: 2rem !important; }
+                #invoice-paper .theme-bg { background-color: ${profile.invoiceSettings?.themeColor || '#f97316'} !important; color: white !important; }
+                #invoice-paper .theme-text { color: ${profile.invoiceSettings?.themeColor || '#f97316'} !important; }
+                #invoice-paper .theme-border { border-color: ${profile.invoiceSettings?.themeColor || '#f97316'} !important; }
+              ` : ''}
 
-              ${profile.invoiceSettings?.templateStyle === 'professional' ? `
+              ${currentTemplate === 'professional' ? `
                 #invoice-paper .rounded-2xl, #invoice-paper .rounded-3xl, #invoice-paper .rounded-[2rem] { border-radius: 0 !important; }
                 #invoice-paper .theme-bg { background-color: #1a1a1a !important; color: white !important; }
                 #invoice-paper .theme-text { color: #1a1a1a !important; }

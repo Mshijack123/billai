@@ -207,7 +207,18 @@ const ReportsPage = () => {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#0C1020'
+        backgroundColor: '#0C1020',
+        onclone: (clonedDoc) => {
+          // Sanitize oklch colors which html2canvas doesn't support
+          const styleTags = clonedDoc.getElementsByTagName('style');
+          for (let i = 0; i < styleTags.length; i++) {
+            try {
+              styleTags[i].innerHTML = styleTags[i].innerHTML.replace(/oklch\([^)]+\)/g, '#71717a');
+            } catch (e) {
+              console.warn('Failed to sanitize style tag:', e);
+            }
+          }
+        }
       });
       
       const imgData = canvas.toDataURL('image/png');
@@ -341,9 +352,13 @@ const ReportsPage = () => {
           #report-content .text-purple-500 { color: #a855f7 !important; }
           #report-content .text-gray-500 { color: #6b7280 !important; }
           #report-content .text-gray-600 { color: #4b5563 !important; }
+          #report-content .text-gray-400 { color: #9ca3af !important; }
           #report-content .bg-white\\/5 { background-color: rgba(255, 255, 255, 0.05) !important; }
           #report-content .divide-white\\/5 > * + * { border-color: rgba(255, 255, 255, 0.05) !important; }
           #report-content .border-white\\/5 { border-color: rgba(255, 255, 255, 0.05) !important; }
+          #report-content .bg-blue-500\\/10 { background-color: rgba(59, 130, 246, 0.1) !important; }
+          #report-content .border-blue-500\\/20 { border-color: rgba(59, 130, 246, 0.2) !important; }
+          #report-content .text-blue-500 { color: #3b82f6 !important; }
         `}</style>
         {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
