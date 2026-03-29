@@ -113,7 +113,8 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
-        logging: false, // Set to false for production
+        allowTaint: false,
+        logging: false,
         backgroundColor: '#ffffff',
         windowWidth: 1200,
         onclone: (clonedDoc) => {
@@ -129,42 +130,31 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
             clonedElement.style.height = 'auto';
             clonedElement.style.left = '0';
             clonedElement.style.top = '0';
+            clonedElement.style.display = 'block';
+            clonedElement.style.visibility = 'visible';
             
             // Force all elements to use standard color formats if they are using oklch
-            // This is a deep search and replace for the cloned element
             const allElements = clonedElement.querySelectorAll('*');
             allElements.forEach((el: any) => {
               const style = window.getComputedStyle(el);
-              
-              // If computed color or background uses oklch, it might still cause issues
-              // although getComputedStyle usually returns rgb()
-              // However, some browsers might return oklch() if it's native
-              
-              if (el.style) {
-                // We've already provided CSS overrides which should take precedence
-              }
+              if (style.color.includes('oklch')) el.style.color = '#1f2937';
+              if (style.backgroundColor.includes('oklch')) el.style.backgroundColor = 'transparent';
+              if (style.borderColor.includes('oklch')) el.style.borderColor = '#e5e7eb';
             });
-          }
-          
-          // Remove any problematic styles from the cloned document that might contain oklch
-          // but are not relevant to the invoice capture
-          const styleSheets = clonedDoc.styleSheets;
-          for (let i = 0; i < styleSheets.length; i++) {
-            try {
-              const rules = styleSheets[i].cssRules;
-              // If we can access rules, we could potentially filter them
-            } catch (e) {
-              // Cross-origin stylesheet, can't access rules
-            }
           }
         }
       });
       
-      const imgData = canvas.toDataURL('image/png');
+      if (!canvas) {
+        throw new Error('Canvas generation failed');
+      }
+
+      const imgData = canvas.toDataURL('image/png', 1.0);
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: 'a4'
+        format: 'a4',
+        compress: true
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -185,7 +175,9 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
         heightLeft -= pdfHeight;
       }
 
-      pdf.save(`Invoice-${invoice.invoiceNumber}.pdf`);
+      const fileName = `Invoice-${invoice.invoiceNumber || invoice.id}.pdf`;
+      pdf.save(fileName);
+      console.log('PDF Downloaded successfully');
     } catch (error: any) {
       console.error('Error generating PDF:', error);
       alert('PDF download failed: ' + (error.message || 'Unknown error. Please check if your browser blocks popups or large downloads.'));
