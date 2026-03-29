@@ -68,6 +68,14 @@ export interface InvoiceItem {
   total: number;
 }
 
+export interface Payment {
+  id: string;
+  amount: number;
+  date: string;
+  method: string;
+  note?: string;
+}
+
 export interface Invoice {
   id: string;
   invoiceNumber: string;
@@ -85,10 +93,13 @@ export interface Invoice {
   sgst: number;
   igst: number;
   total: number;
+  paidAmount: number;
+  balanceAmount: number;
   status: 'paid' | 'pending' | 'partial';
   gstType: 'CGST_SGST' | 'IGST';
   notes?: string;
   confirmedByUser: boolean;
+  payments?: Payment[];
   createdAt: string;
 }
 

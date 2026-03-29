@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Sparkles, Loader2, Check, AlertCircle, Edit2, Save, User, Package, Mic, MicOff } from 'lucide-react';
 import { parseHindiPrompt, ParsedInvoice } from '../lib/gemini';
 import { calculateGST, calculateGSTType, INDIAN_STATES } from '../lib/gst-calculator';
+import { getLocalDateString, calculateDueDate } from '../lib/date-utils';
 import { useFirebase } from './FirebaseProvider';
 import { useInvoiceLimit } from '../hooks/useInvoiceLimit';
 import { db, collection, addDoc, serverTimestamp, query, where, getDocs } from '../firebase';
@@ -18,9 +19,10 @@ interface AIInvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  onUpgrade?: () => void;
 }
 
-export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose, onSuccess }) => {
+export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose, onSuccess, onUpgrade }) => {
   const { profile } = useFirebase();
   const { canCreateInvoice } = useInvoiceLimit();
   const [step, setStep] = useState<'input' | 'processing' | 'preview'>('input');
@@ -108,6 +110,7 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
     if (!parsedData || !profile) return;
     if (!canCreateInvoice) {
       setError('Aapki monthly invoice limit (20) khatam ho gayi hai. Please upgrade karein.');
+      if (onUpgrade) onUpgrade();
       return;
     }
     setIsSaving(true);
@@ -147,17 +150,12 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
       const totalGst = invoiceItems.reduce((sum, item) => sum + item.gstAmount, 0);
       const total = subtotal + totalGst;
 
-      // Calculate due date based on payment terms
-      const getDueDate = (terms: string) => {
-        const date = new Date();
-        if (terms === '7 days') date.setDate(date.getDate() + 7);
-        else if (terms === '15 days') date.setDate(date.getDate() + 15);
-        else if (terms === '30 days') date.setDate(date.getDate() + 30);
-        return date.toISOString().split('T')[0];
-      };
-
       const prefix = profile.invoiceSettings?.prefix || 'INV';
       const randomNum = Math.floor(1000 + Math.random() * 9000);
+      const currentDate = new Date();
+
+      const finalPaidAmount = parsedData.payment_status === 'paid' ? total : (parsedData.payment_status === 'partial' ? (parsedData.paid_amount || 0) : 0);
+      const finalBalanceAmount = total - finalPaidAmount;
 
       const newInvoice: Omit<Invoice, 'id'> = {
         invoiceNumber: `${prefix}-${randomNum}`,
@@ -167,19 +165,28 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
         customerGstin: matchedCustomer?.gstin || '',
         customerState: customerState,
         customerAddress: matchedCustomer?.address || '',
-        date: new Date().toISOString().split('T')[0],
-        dueDate: getDueDate(profile.invoiceSettings?.paymentTerms || 'Immediate'),
+        date: getLocalDateString(currentDate),
+        dueDate: calculateDueDate(currentDate, profile.invoiceSettings?.paymentTerms || 'Immediate'),
         items: invoiceItems,
         subtotal,
         cgst: gstType === 'CGST_SGST' ? totalGst / 2 : 0,
         sgst: gstType === 'CGST_SGST' ? totalGst / 2 : 0,
         igst: gstType === 'IGST' ? totalGst : 0,
         total,
+        paidAmount: finalPaidAmount,
+        balanceAmount: finalBalanceAmount,
         status: parsedData.payment_status,
         gstType,
         notes: profile.invoiceSettings?.defaultNotes || '',
         confirmedByUser: true,
-        createdAt: new Date().toISOString()
+        payments: parsedData.payment_status !== 'pending' ? [{
+          id: Math.random().toString(36).substr(2, 9),
+          amount: finalPaidAmount,
+          date: currentDate.toISOString(),
+          method: 'Cash',
+          note: 'Initial payment'
+        }] : [],
+        createdAt: currentDate.toISOString()
       };
 
       await addDoc(collection(db, 'invoices'), {
@@ -421,7 +428,14 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                           {['paid', 'pending', 'partial'].map(status => (
                             <button
                               key={status}
-                              onClick={() => setParsedData({...parsedData, payment_status: status as any})}
+                              onClick={() => {
+                                const total = parsedData.items.reduce((sum, item) => sum + (item.qty * item.rate * (1 + item.gst_rate / 100)), 0);
+                                setParsedData({
+                                  ...parsedData, 
+                                  payment_status: status as any,
+                                  paid_amount: status === 'paid' ? total : (status === 'pending' ? 0 : parsedData.paid_amount)
+                                });
+                              }}
                               className={cn(
                                 "flex-1 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all",
                                 parsedData.payment_status === status 
@@ -434,6 +448,18 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                           ))}
                         </div>
                       </div>
+
+                      {parsedData.payment_status === 'partial' && (
+                        <div>
+                          <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">Paid Amount (₹)</p>
+                          <input 
+                            type="number"
+                            value={parsedData.paid_amount || 0}
+                            onChange={(e) => setParsedData({...parsedData, paid_amount: Number(e.target.value)})}
+                            className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none w-full"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
 

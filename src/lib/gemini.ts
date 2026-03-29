@@ -11,6 +11,7 @@ export interface ParsedInvoice {
     gst_rate: number;
   }[];
   payment_status: 'paid' | 'pending' | 'partial';
+  paid_amount?: number;
   notes?: string;
 }
 
@@ -31,8 +32,9 @@ export async function parseHindiPrompt(prompt: string, existingProducts?: { name
     2. Extract items with quantity, rate, and GST rate.
     3. If an item in the prompt matches an "Existing Product" listed above, use its rate and GST rate automatically if not explicitly overridden in the prompt.
     4. Extract payment status (paid, pending, or partial).
-    5. If multiple items, list them all.
-    6. Return ONLY the JSON object.`,
+    5. If status is 'partial', extract the 'paid_amount' if mentioned.
+    6. If multiple items, list them all.
+    7. Return ONLY the JSON object.`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -53,6 +55,7 @@ export async function parseHindiPrompt(prompt: string, existingProducts?: { name
             }
           },
           payment_status: { type: Type.STRING, enum: ["paid", "pending", "partial"] },
+          paid_amount: { type: Type.NUMBER },
           notes: { type: Type.STRING }
         },
         required: ["customer_name", "items", "payment_status"]

@@ -17,6 +17,7 @@ import {
   Share2
 } from 'lucide-react';
 import { useFirebase } from '../components/FirebaseProvider';
+import { usePricing } from '../components/PricingContext';
 import { db, collection, query, where, onSnapshot, getDocs } from '../firebase';
 import { Invoice, DashboardStats } from '../types';
 import { AIInvoiceModal } from '../components/AIInvoiceModal';
@@ -78,6 +79,7 @@ const StatCard = ({ title, value, label, trend, icon: Icon, color }: any) => (
 
 const Dashboard = () => {
   const { profile } = useFirebase();
+  const { openPricing } = usePricing();
   const { invoiceCount, limit, canCreateInvoice, remaining } = useInvoiceLimit();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
@@ -114,8 +116,8 @@ const Dashboard = () => {
       setInvoices(docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
       
       // Calculate stats
-      const revenue = docs.reduce((sum, inv) => sum + (inv.status === 'paid' ? inv.total : 0), 0);
-      const pending = docs.reduce((sum, inv) => sum + (inv.status !== 'paid' ? inv.total : 0), 0);
+      const revenue = docs.reduce((sum, inv) => sum + (inv.paidAmount || 0), 0);
+      const pending = docs.reduce((sum, inv) => sum + (inv.balanceAmount ?? (inv.status !== 'paid' ? inv.total : 0)), 0);
       const gst = docs.reduce((sum, inv) => sum + inv.cgst + inv.sgst + inv.igst, 0);
       
       setStats({
@@ -142,8 +144,9 @@ const Dashboard = () => {
       docs.forEach(inv => {
         const d = new Date(inv.date);
         const monthIndex = last6Months.findIndex(m => m.month === d.getMonth() && m.year === d.getFullYear());
-        if (monthIndex !== -1 && inv.status === 'paid') {
-          last6Months[monthIndex].total += inv.total;
+        if (monthIndex !== -1) {
+          // Add paid amount to revenue chart
+          last6Months[monthIndex].total += (inv.paidAmount || 0);
         }
       });
 
@@ -232,7 +235,7 @@ const Dashboard = () => {
       </AnimatePresence>
       
       {/* Invoice Limit Warning */}
-      {invoiceCount >= limit * 0.8 && (
+      {invoiceCount >= limit * 0.8 && profile?.plan === 'free' && (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -257,7 +260,7 @@ const Dashboard = () => {
               </p>
             </div>
           </div>
-          <Link to="/settings" className="text-xs font-bold text-orange-500 hover:underline">Upgrade Karein →</Link>
+          <button onClick={openPricing} className="text-xs font-bold text-orange-500 hover:underline">Upgrade Karein →</button>
         </motion.div>
       )}
 
@@ -320,7 +323,7 @@ const Dashboard = () => {
         <div className="glass p-8 rounded-[2.5rem] border border-white/5 flex flex-col gap-4">
           <h3 className="text-xl font-bold mb-2">Quick karo</h3>
           <button 
-            onClick={() => canCreateInvoice ? setIsAIModalOpen(true) : alert('Limit khatam ho gayi hai! Upgrade karein.')}
+            onClick={() => canCreateInvoice ? setIsAIModalOpen(true) : openPricing()}
             className={cn(
               "w-full p-6 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl text-left group transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-orange-500/20",
               !canCreateInvoice && "opacity-50 grayscale cursor-not-allowed"
@@ -337,7 +340,7 @@ const Dashboard = () => {
           </button>
 
           <button 
-            onClick={() => canCreateInvoice ? setIsManualModalOpen(true) : alert('Limit khatam ho gayi hai! Upgrade karein.')}
+            onClick={() => canCreateInvoice ? setIsManualModalOpen(true) : openPricing()}
             className={cn(
               "w-full p-4 border border-white/10 rounded-2xl text-left transition-all flex items-center gap-4",
               canCreateInvoice ? "hover:bg-white/5" : "opacity-50 grayscale cursor-not-allowed"
@@ -397,7 +400,12 @@ const Dashboard = () => {
                     <p className="text-sm font-bold">{inv.customerName}</p>
                     <p className="text-[10px] text-gray-500">{new Date(inv.date).toLocaleDateString()}</p>
                   </td>
-                  <td className="px-8 py-4 font-mono font-bold text-sm">₹{inv.total.toLocaleString()}</td>
+                  <td className="px-8 py-4">
+                    <p className="text-sm font-bold">₹{inv.total.toLocaleString()}</p>
+                    {inv.status === 'partial' && (
+                      <p className="text-[10px] text-orange-500 font-bold">Bal: ₹{(inv.balanceAmount ?? 0).toLocaleString()}</p>
+                    )}
+                  </td>
                   <td className="px-8 py-4">
                     <span className={cn(
                       "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
@@ -495,12 +503,14 @@ const Dashboard = () => {
         isOpen={isAIModalOpen} 
         onClose={() => setIsAIModalOpen(false)} 
         onSuccess={() => {}}
+        onUpgrade={openPricing}
       />
 
       <ManualInvoiceModal 
         isOpen={isManualModalOpen}
         onClose={() => setIsManualModalOpen(false)}
         onSuccess={() => {}}
+        onUpgrade={openPricing}
       />
 
       <InvoiceDetailModal 

@@ -28,13 +28,15 @@ export const useInvoiceLimit = () => {
     return () => unsubscribe();
   }, [profile]);
 
-  const canCreateInvoice = invoiceCount < LIMIT;
+  const isPro = profile?.plan === 'pro';
+  const canCreateInvoice = isPro || invoiceCount < LIMIT;
 
   return {
     invoiceCount,
     limit: LIMIT,
     canCreateInvoice,
     loading,
-    remaining: Math.max(0, LIMIT - invoiceCount)
+    remaining: isPro ? Infinity : Math.max(0, LIMIT - invoiceCount),
+    isPro
   };
 };

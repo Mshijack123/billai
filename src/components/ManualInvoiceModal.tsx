@@ -6,6 +6,7 @@ import { useInvoiceLimit } from '../hooks/useInvoiceLimit';
 import { db, collection, addDoc, serverTimestamp, query, where, getDocs } from '../firebase';
 import { Invoice, InvoiceItem, Customer, Product } from '../types';
 import { calculateGST, calculateGSTType, INDIAN_STATES } from '../lib/gst-calculator';
+import { getLocalDateString, calculateDueDate } from '../lib/date-utils';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -17,10 +18,11 @@ interface ManualInvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  onUpgrade?: () => void;
   initialProduct?: Product;
 }
 
-export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, onClose, onSuccess, initialProduct }) => {
+export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, onClose, onSuccess, onUpgrade, initialProduct }) => {
   const { profile } = useFirebase();
   const { canCreateInvoice } = useInvoiceLimit();
   const [isSaving, setIsSaving] = useState(false);
@@ -29,25 +31,33 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
   
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [customerState, setCustomerState] = useState('Rajasthan');
-  const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
+  const [invoiceDate, setInvoiceDate] = useState(getLocalDateString());
   
-  // Calculate due date based on payment terms
-  const getDueDate = (terms: string) => {
-    const date = new Date();
-    if (terms === '7 days') date.setDate(date.getDate() + 7);
-    else if (terms === '15 days') date.setDate(date.getDate() + 15);
-    else if (terms === '30 days') date.setDate(date.getDate() + 30);
-    return date.toISOString().split('T')[0];
-  };
-
-  const [dueDate, setDueDate] = useState(getDueDate(profile?.invoiceSettings?.paymentTerms || 'Immediate'));
+  const [dueDate, setDueDate] = useState(calculateDueDate(new Date(), profile?.invoiceSettings?.paymentTerms || 'Immediate'));
   const [status, setStatus] = useState<'paid' | 'pending' | 'partial'>('pending');
+  const [paidAmount, setPaidAmount] = useState<number>(0);
   const [items, setItems] = useState<InvoiceItem[]>([]);
+
+  const totals = items.reduce((acc, item) => ({
+    subtotal: acc.subtotal + item.taxableAmount,
+    gst: acc.gst + item.gstAmount,
+    total: acc.total + item.total
+  }), { subtotal: 0, gst: 0, total: 0 });
+
+  useEffect(() => {
+    if (status === 'paid') {
+      setPaidAmount(totals.total);
+    } else if (status === 'pending') {
+      setPaidAmount(0);
+    }
+  }, [status, totals.total]);
 
   useEffect(() => {
     if (isOpen && profile) {
       fetchData();
-      setDueDate(getDueDate(profile.invoiceSettings?.paymentTerms || 'Immediate'));
+      const currentDate = new Date();
+      setInvoiceDate(getLocalDateString(currentDate));
+      setDueDate(calculateDueDate(currentDate, profile.invoiceSettings?.paymentTerms || 'Immediate'));
       
       if (initialProduct) {
         const taxableAmount = initialProduct.rate;
@@ -152,12 +162,6 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
     setItems(newItems);
   };
 
-  const totals = items.reduce((acc, item) => ({
-    subtotal: acc.subtotal + item.taxableAmount,
-    gst: acc.gst + item.gstAmount,
-    total: acc.total + item.total
-  }), { subtotal: 0, gst: 0, total: 0 });
-
   const handleSave = async () => {
     if (!profile || !selectedCustomerId) {
       alert('Please select a customer');
@@ -166,6 +170,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
 
     if (!canCreateInvoice) {
       alert('Aapki monthly invoice limit (20) khatam ho gayi hai. Please upgrade karein.');
+      if (onUpgrade) onUpgrade();
       return;
     }
 
@@ -176,6 +181,9 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
       
       const prefix = profile.invoiceSettings?.prefix || 'INV';
       const randomNum = Math.floor(1000 + Math.random() * 9000);
+
+      const finalPaidAmount = status === 'paid' ? totals.total : (status === 'partial' ? paidAmount : 0);
+      const finalBalanceAmount = totals.total - finalPaidAmount;
 
       const newInvoice: Omit<Invoice, 'id'> = {
         invoiceNumber: `${prefix}-${randomNum}`,
@@ -193,10 +201,19 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
         sgst: gstType === 'CGST_SGST' ? totals.gst / 2 : 0,
         igst: gstType === 'IGST' ? totals.gst : 0,
         total: totals.total,
+        paidAmount: finalPaidAmount,
+        balanceAmount: finalBalanceAmount,
         status,
         gstType,
         notes: profile.invoiceSettings?.defaultNotes || '',
         confirmedByUser: true,
+        payments: status !== 'pending' ? [{
+          id: Math.random().toString(36).substr(2, 9),
+          amount: finalPaidAmount,
+          date: new Date().toISOString(),
+          method: 'Cash',
+          note: 'Initial payment'
+        }] : [],
         createdAt: new Date().toISOString()
       };
 
@@ -364,7 +381,6 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
           </div>
 
           {/* Bottom Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-white/5">
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Payment Status</label>
@@ -372,6 +388,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                   {['paid', 'pending', 'partial'].map(s => (
                     <button
                       key={s}
+                      type="button"
                       onClick={() => setStatus(s as any)}
                       className={cn(
                         "flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-widest border transition-all",
@@ -383,6 +400,19 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                   ))}
                 </div>
               </div>
+              {status === 'partial' && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Paid Amount (₹)</label>
+                  <input 
+                    type="number" 
+                    value={paidAmount}
+                    onChange={(e) => setPaidAmount(Number(e.target.value))}
+                    max={totals.total}
+                    className="input-dark w-full" 
+                  />
+                  <p className="text-[10px] text-gray-500">Balance: ₹{(totals.total - paidAmount).toLocaleString()}</p>
+                </div>
+              )}
             </div>
             
             <div className="glass p-6 rounded-3xl border border-white/5 space-y-3">
@@ -410,7 +440,6 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
               </div>
             </div>
           </div>
-        </div>
 
         <div className="p-6 border-t border-white/5 flex gap-4 flex-shrink-0">
           <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-white/10 hover:bg-white/5 font-bold transition-all">

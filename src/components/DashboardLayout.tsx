@@ -17,6 +17,7 @@ import {
 import { useFirebase } from './FirebaseProvider';
 import { auth, signOut } from '../firebase';
 import { motion, AnimatePresence } from 'motion/react';
+import { usePricing } from './PricingContext';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -41,8 +42,21 @@ const SidebarItem = ({ to, icon: Icon, label, active }: { to: string, icon: any,
 
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { profile } = useFirebase();
+  const { openPricing } = usePricing();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const [isProfileOpen, setIsProfileOpen] = React.useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const navItems = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -77,19 +91,14 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
             <div className="bg-gradient-to-br from-orange-500/20 to-orange-600/5 p-4 rounded-2xl border border-orange-500/20 mb-6">
               <p className="text-sm font-semibold text-orange-500 mb-1">Upgrade to PRO</p>
               <p className="text-xs text-gray-400 mb-3">Get unlimited invoices & GST reports.</p>
-              <Link to="/settings" className="block text-center py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-lg transition-colors">
+              <button 
+                onClick={openPricing}
+                className="w-full text-center py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-lg transition-colors"
+              >
                 Upgrade Now
-              </Link>
+              </button>
             </div>
           )}
-          
-          <button 
-            onClick={() => signOut(auth)}
-            className="flex items-center gap-3 px-4 py-3 w-full text-gray-400 hover:text-white transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-            <span className="font-medium">Logout</span>
-          </button>
         </div>
       </aside>
 
@@ -159,14 +168,52 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
               <Bell className="w-5 h-5" />
               <span className="absolute top-2 right-2 w-2 h-2 bg-orange-500 rounded-full border-2 border-[#060810]"></span>
             </button>
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium">{profile?.displayName}</p>
-                <p className="text-[10px] text-orange-500 font-bold uppercase tracking-wider">{profile?.plan} Plan</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center font-bold text-white border-2 border-white/10">
-                {profile?.displayName?.charAt(0)}
-              </div>
+            <div className="relative" ref={dropdownRef}>
+              <button 
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="flex items-center gap-3 hover:bg-white/5 p-1 rounded-full transition-colors"
+              >
+                <div className="text-right hidden sm:block">
+                  <p className="text-sm font-medium">{profile?.displayName}</p>
+                  <p className="text-[10px] text-orange-500 font-bold uppercase tracking-wider">{profile?.plan} Plan</p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center font-bold text-white border-2 border-white/10">
+                  {profile?.displayName?.charAt(0)}
+                </div>
+              </button>
+
+              <AnimatePresence>
+                {isProfileOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-2 w-56 bg-[#0C1020] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+                  >
+                    <div className="p-4 border-b border-white/5">
+                      <p className="text-sm font-bold truncate">{profile?.displayName}</p>
+                      <p className="text-xs text-gray-500 truncate">{profile?.email}</p>
+                    </div>
+                    <div className="p-2">
+                      <Link 
+                        to="/settings" 
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                      >
+                        <Settings className="w-4 h-4" />
+                        <span>Settings</span>
+                      </Link>
+                      <button 
+                        onClick={() => signOut(auth)}
+                        className="flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all w-full text-left"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </header>

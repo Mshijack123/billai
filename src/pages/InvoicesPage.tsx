@@ -16,6 +16,7 @@ import {
   Share2
 } from 'lucide-react';
 import { useFirebase } from '../components/FirebaseProvider';
+import { usePricing } from '../components/PricingContext';
 import { db, collection, query, where, onSnapshot, updateDoc, doc } from '../firebase';
 import { Invoice } from '../types';
 import { AIInvoiceModal } from '../components/AIInvoiceModal';
@@ -32,6 +33,7 @@ function cn(...inputs: ClassValue[]) {
 
 const InvoicesPage = () => {
   const { profile } = useFirebase();
+  const { openPricing } = usePricing();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -91,9 +93,16 @@ const InvoicesPage = () => {
     if (idsToUpdate.length === 0) return;
 
     try {
-      const promises = idsToUpdate.map(invoiceId => 
-        updateDoc(doc(db, 'invoices', invoiceId), { status: 'paid' })
-      );
+      const promises = idsToUpdate.map(invoiceId => {
+        const inv = invoices.find(i => i.id === invoiceId);
+        if (!inv) return Promise.resolve();
+        
+        return updateDoc(doc(db, 'invoices', invoiceId), { 
+          status: 'paid',
+          paidAmount: inv.total,
+          balanceAmount: 0
+        });
+      });
       await Promise.all(promises);
       setSelectedInvoices([]);
     } catch (err) {
@@ -137,11 +146,10 @@ const InvoicesPage = () => {
   const stats = {
     total: invoices.length,
     paid: invoices.filter(i => i.status === 'paid').length,
-    paidAmount: invoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.total, 0),
+    paidAmount: invoices.reduce((sum, i) => sum + (i.paidAmount || 0), 0),
     pending: invoices.filter(i => i.status === 'pending').length,
-    pendingAmount: invoices.filter(i => i.status === 'pending').reduce((sum, i) => sum + i.total, 0),
+    pendingAmount: invoices.reduce((sum, i) => sum + (i.balanceAmount ?? i.total), 0),
     partial: invoices.filter(i => i.status === 'partial').length,
-    partialAmount: invoices.filter(i => i.status === 'partial').reduce((sum, i) => sum + i.total, 0),
   };
 
   return (
@@ -216,7 +224,7 @@ const InvoicesPage = () => {
           </div>
           <div>
             <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Paid</p>
-            <p className="text-xl font-bold">{stats.paid} <span className="text-xs text-green-500 font-mono ml-1">₹{stats.paidAmount.toLocaleString()}</span></p>
+            <p className="text-xl font-bold">₹{stats.paidAmount.toLocaleString()}</p>
           </div>
         </div>
         <div className="h-10 w-px bg-white/5 hidden md:block" />
@@ -225,8 +233,8 @@ const InvoicesPage = () => {
             <div className="w-2 h-2 bg-amber-500 rounded-full" />
           </div>
           <div>
-            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Pending</p>
-            <p className="text-xl font-bold">{stats.pending} <span className="text-xs text-amber-500 font-mono ml-1">₹{stats.pendingAmount.toLocaleString()}</span></p>
+            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Balance</p>
+            <p className="text-xl font-bold text-amber-500">₹{stats.pendingAmount.toLocaleString()}</p>
           </div>
         </div>
         <div className="h-10 w-px bg-white/5 hidden md:block" />
@@ -235,8 +243,8 @@ const InvoicesPage = () => {
             <div className="w-2 h-2 bg-blue-500 rounded-full" />
           </div>
           <div>
-            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Partial</p>
-            <p className="text-xl font-bold">{stats.partial} <span className="text-xs text-blue-500 font-mono ml-1">₹{stats.partialAmount.toLocaleString()}</span></p>
+            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Invoices</p>
+            <p className="text-xl font-bold">{stats.total}</p>
           </div>
         </div>
       </div>
@@ -283,7 +291,12 @@ const InvoicesPage = () => {
                   </td>
                   <td className="px-8 py-4 text-xs text-gray-500">{new Date(inv.date).toLocaleDateString()}</td>
                   <td className="px-8 py-4 text-xs text-gray-500">{inv.items.length} items</td>
-                  <td className="px-8 py-4 font-mono font-bold text-sm">₹{inv.total.toLocaleString()}</td>
+                  <td className="px-8 py-4">
+                    <p className="text-sm font-bold">₹{inv.total.toLocaleString()}</p>
+                    {inv.status === 'partial' && (
+                      <p className="text-[10px] text-orange-500 font-bold">Bal: ₹{(inv.balanceAmount ?? 0).toLocaleString()}</p>
+                    )}
+                  </td>
                   <td className="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">{inv.gstType}</td>
                   <td className="px-8 py-4">
                     <span className={cn(
@@ -446,12 +459,14 @@ const InvoicesPage = () => {
         isOpen={isAIModalOpen} 
         onClose={() => setIsAIModalOpen(false)} 
         onSuccess={() => {}}
+        onUpgrade={openPricing}
       />
 
       <ManualInvoiceModal 
         isOpen={isManualModalOpen}
         onClose={() => setIsManualModalOpen(false)}
         onSuccess={() => {}}
+        onUpgrade={openPricing}
       />
 
       <InvoiceDetailModal 

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { auth, db, onAuthStateChanged, doc, getDoc, setDoc } from '../firebase';
+import { auth, db, onAuthStateChanged, doc, getDoc, setDoc, onSnapshot } from '../firebase';
 import { UserProfile } from '../types';
 
 interface FirebaseContextType {
@@ -25,31 +25,61 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isAuthReady, setIsAuthReady] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    let unsubscribeProfile: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+      
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+        unsubscribeProfile = null;
+      }
+
       if (user) {
+        // First check if profile exists, if not create it
         const profileDoc = await getDoc(doc(db, 'users', user.uid));
-        if (profileDoc.exists()) {
-          setProfile(profileDoc.data() as UserProfile);
-        } else {
+        if (!profileDoc.exists()) {
           const newProfile: UserProfile = {
             uid: user.uid,
             email: user.email || '',
             displayName: user.displayName || '',
             plan: 'free',
             createdAt: new Date().toISOString(),
+            invoiceSettings: {
+              prefix: 'INV',
+              startingNumber: 1,
+              defaultGstRate: 18,
+              paymentTerms: 'Due on Receipt',
+              defaultNotes: 'Thank you for your business!',
+              autoGenerateNumber: true,
+              sendEmailCopy: false,
+              showBankDetails: true,
+              enableSignature: false,
+              templateStyle: 'modern'
+            }
           };
           await setDoc(doc(db, 'users', user.uid), newProfile);
-          setProfile(newProfile);
         }
+
+        // Listen for real-time updates
+        unsubscribeProfile = onSnapshot(doc(db, 'users', user.uid), (doc) => {
+          if (doc.exists()) {
+            setProfile(doc.data() as UserProfile);
+          }
+          setLoading(false);
+          setIsAuthReady(true);
+        });
       } else {
         setProfile(null);
+        setLoading(false);
+        setIsAuthReady(true);
       }
-      setLoading(false);
-      setIsAuthReady(true);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeProfile) unsubscribeProfile();
+    };
   }, []);
 
   return (

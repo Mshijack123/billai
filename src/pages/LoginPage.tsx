@@ -1,17 +1,122 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { auth, googleProvider, signInWithPopup } from '../firebase';
-import { Link } from 'react-router-dom';
-import { CheckCircle2, Mail, Lock, User, Store, ArrowRight } from 'lucide-react';
+import { auth, googleProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, db, doc, setDoc } from '../firebase';
+import { Link, useNavigate } from 'react-router-dom';
+import { CheckCircle2, Mail, Lock, User, Store, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 
 const LoginPage = () => {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  // Form States
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [businessName, setBusinessName] = useState('');
 
   const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (error) {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+
+      // Check if user profile exists, if not create one
+      // This is a common pattern for social login
+      // We'll use a simplified version here
+      const userDoc = await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName || 'User',
+        businessName: '',
+        plan: 'free',
+        createdAt: new Date().toISOString(),
+        invoiceSettings: {
+          prefix: 'INV',
+          startingNumber: 1,
+          defaultGstRate: 18,
+          paymentTerms: 'Due on Receipt',
+          defaultNotes: 'Thank you for your business!',
+          autoGenerateNumber: true,
+          sendEmailCopy: false,
+          showBankDetails: true,
+          enableSignature: false,
+          templateStyle: 'modern'
+        }
+      }, { merge: true });
+
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('Google Login error:', error);
+      setError(error.message || 'Google login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      setError('Please enter both email and password.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate('/dashboard');
+    } catch (error: any) {
       console.error('Login error:', error);
+      setError(error.message || 'Login failed. Check your credentials.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmailSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password || !name || !businessName) {
+      setError('Please fill in all fields.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      const user = result.user;
+
+      // Create user profile in Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        email: user.email,
+        displayName: name,
+        businessName: businessName,
+        plan: 'free',
+        createdAt: new Date().toISOString(),
+        invoiceSettings: {
+          prefix: 'INV',
+          startingNumber: 1,
+          defaultGstRate: 18,
+          paymentTerms: 'Due on Receipt',
+          defaultNotes: 'Thank you for your business!',
+          autoGenerateNumber: true,
+          sendEmailCopy: false,
+          showBankDetails: true,
+          enableSignature: false,
+          templateStyle: 'modern'
+        }
+      });
+
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      setError(error.message || 'Signup failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -100,18 +205,29 @@ const LoginPage = () => {
           {/* Tab Switcher */}
           <div className="flex bg-white/5 p-1 rounded-xl mb-10">
             <button 
-              onClick={() => setActiveTab('login')}
+              onClick={() => { setActiveTab('login'); setError(null); }}
               className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'login' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-gray-400 hover:text-white'}`}
             >
               Login
             </button>
             <button 
-              onClick={() => setActiveTab('signup')}
+              onClick={() => { setActiveTab('signup'); setError(null); }}
               className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'signup' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-gray-400 hover:text-white'}`}
             >
               Sign Up
             </button>
           </div>
+
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center gap-3 text-red-500 text-sm"
+            >
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <p>{error}</p>
+            </motion.div>
+          )}
 
           <AnimatePresence mode="wait">
             {activeTab === 'login' ? (
@@ -126,9 +242,10 @@ const LoginPage = () => {
 
                 <button 
                   onClick={handleGoogleLogin}
-                  className="w-full py-3 px-4 rounded-xl border border-white/10 hover:bg-white/5 flex items-center justify-center gap-3 font-bold transition-all mb-6"
+                  disabled={isLoading}
+                  className="w-full py-3 px-4 rounded-xl border border-white/10 hover:bg-white/5 flex items-center justify-center gap-3 font-bold transition-all mb-6 disabled:opacity-50"
                 >
-                  <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
+                  {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />}
                   Google se login karo
                 </button>
 
@@ -138,22 +255,36 @@ const LoginPage = () => {
                   <div className="h-px flex-1 bg-white/5" />
                 </div>
 
-                <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                <form className="space-y-4" onSubmit={handleEmailLogin}>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Email Address</label>
                     <div className="relative">
                       <Mail className="w-5 h-5 text-gray-600 absolute left-4 top-1/2 -translate-y-1/2" />
-                      <input type="email" placeholder="name@company.com" className="input-dark w-full pl-12" />
+                      <input 
+                        type="email" 
+                        placeholder="name@company.com" 
+                        className="input-dark w-full pl-12" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
                     </div>
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between items-center ml-1">
                       <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Password</label>
-                      <button className="text-[10px] text-orange-500 font-bold hover:underline">Password bhool gaye?</button>
+                      <button type="button" className="text-[10px] text-orange-500 font-bold hover:underline">Password bhool gaye?</button>
                     </div>
                     <div className="relative">
                       <Lock className="w-5 h-5 text-gray-600 absolute left-4 top-1/2 -translate-y-1/2" />
-                      <input type="password" placeholder="••••••••" className="input-dark w-full pl-12" />
+                      <input 
+                        type="password" 
+                        placeholder="••••••••" 
+                        className="input-dark w-full pl-12" 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
                     </div>
                   </div>
                   
@@ -162,8 +293,12 @@ const LoginPage = () => {
                     <span className="text-xs text-gray-400">Mujhe yaad rakho</span>
                   </div>
 
-                  <button className="btn-orange w-full flex items-center justify-center gap-2">
-                    Login karo →
+                  <button 
+                    type="submit" 
+                    disabled={isLoading}
+                    className="btn-orange w-full flex items-center justify-center gap-2"
+                  >
+                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Login karo →'}
                   </button>
                 </form>
               </motion.div>
@@ -179,9 +314,10 @@ const LoginPage = () => {
 
                 <button 
                   onClick={handleGoogleLogin}
-                  className="w-full py-3 px-4 rounded-xl border border-white/10 hover:bg-white/5 flex items-center justify-center gap-3 font-bold transition-all mb-6"
+                  disabled={isLoading}
+                  className="w-full py-3 px-4 rounded-xl border border-white/10 hover:bg-white/5 flex items-center justify-center gap-3 font-bold transition-all mb-6 disabled:opacity-50"
                 >
-                  <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
+                  {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />}
                   Google se signup karo
                 </button>
 
@@ -191,20 +327,34 @@ const LoginPage = () => {
                   <div className="h-px flex-1 bg-white/5" />
                 </div>
 
-                <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                <form className="space-y-4" onSubmit={handleEmailSignup}>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Naam</label>
                       <div className="relative">
                         <User className="w-5 h-5 text-gray-600 absolute left-4 top-1/2 -translate-y-1/2" />
-                        <input type="text" placeholder="Ramesh" className="input-dark w-full pl-12" />
+                        <input 
+                          type="text" 
+                          placeholder="Ramesh" 
+                          className="input-dark w-full pl-12" 
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          required
+                        />
                       </div>
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Business</label>
                       <div className="relative">
                         <Store className="w-5 h-5 text-gray-600 absolute left-4 top-1/2 -translate-y-1/2" />
-                        <input type="text" placeholder="Gupta Shoes" className="input-dark w-full pl-12" />
+                        <input 
+                          type="text" 
+                          placeholder="Gupta Shoes" 
+                          className="input-dark w-full pl-12" 
+                          value={businessName}
+                          onChange={(e) => setBusinessName(e.target.value)}
+                          required
+                        />
                       </div>
                     </div>
                   </div>
@@ -212,19 +362,37 @@ const LoginPage = () => {
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Email Address</label>
                     <div className="relative">
                       <Mail className="w-5 h-5 text-gray-600 absolute left-4 top-1/2 -translate-y-1/2" />
-                      <input type="email" placeholder="name@company.com" className="input-dark w-full pl-12" />
+                      <input 
+                        type="email" 
+                        placeholder="name@company.com" 
+                        className="input-dark w-full pl-12" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
                     </div>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Password</label>
                     <div className="relative">
                       <Lock className="w-5 h-5 text-gray-600 absolute left-4 top-1/2 -translate-y-1/2" />
-                      <input type="password" placeholder="••••••••" className="input-dark w-full pl-12" />
+                      <input 
+                        type="password" 
+                        placeholder="••••••••" 
+                        className="input-dark w-full pl-12" 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
                     </div>
                   </div>
 
-                  <button className="btn-orange w-full flex items-center justify-center gap-2 mt-4">
-                    Account banao — Free mein →
+                  <button 
+                    type="submit" 
+                    disabled={isLoading}
+                    className="btn-orange w-full flex items-center justify-center gap-2 mt-4"
+                  >
+                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Account banao — Free mein →'}
                   </button>
                   
                   <p className="text-[10px] text-gray-500 text-center mt-4">

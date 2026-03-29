@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Download, Share2, Edit3, Printer, Loader2 } from 'lucide-react';
-import { Invoice, UserProfile } from '../types';
+import { X, Download, Share2, Edit3, Printer, Loader2, CreditCard, History, Plus, Calendar as CalendarIcon, IndianRupee, Layout } from 'lucide-react';
+import { Invoice, UserProfile, Payment } from '../types';
 import { numberToWords } from '../lib/utils';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import { db, doc, updateDoc } from '../firebase';
 
 interface InvoiceDetailModalProps {
   isOpen: boolean;
@@ -15,8 +16,36 @@ interface InvoiceDetailModalProps {
 
 export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, onClose, invoice, profile }) => {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isRecordingPayment, setIsRecordingPayment] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState<string>('');
+  const [paymentMethod, setPaymentMethod] = useState<string>('Cash');
+  const [paymentNote, setPaymentNote] = useState<string>('');
+  const [isSavingPayment, setIsSavingPayment] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [currentTemplate, setCurrentTemplate] = useState(profile?.invoiceSettings?.templateStyle || 'modern');
 
   if (!isOpen || !invoice || !profile) return null;
+
+  const gstBreakup = invoice.items.reduce((acc: Record<string, any>, item) => {
+    const hsn = item.hsn || 'N/A';
+    if (!acc[hsn]) {
+      acc[hsn] = {
+        taxableAmount: 0,
+        cgst: 0,
+        sgst: 0,
+        igst: 0,
+        gstRate: item.gstRate
+      };
+    }
+    acc[hsn].taxableAmount += item.taxableAmount;
+    if (invoice.gstType === 'CGST_SGST') {
+      acc[hsn].cgst += (item.gstAmount || 0) / 2;
+      acc[hsn].sgst += (item.gstAmount || 0) / 2;
+    } else {
+      acc[hsn].igst += (item.gstAmount || 0);
+    }
+    return acc;
+  }, {});
 
   const handleWhatsAppShare = () => {
     if (!invoice || !profile) return;
@@ -60,7 +89,20 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        windowWidth: 1200, // Force desktop-like layout for PDF
+        onclone: (clonedDoc) => {
+          const clonedElement = clonedDoc.getElementById('invoice-paper');
+          if (clonedElement) {
+            clonedElement.style.transform = 'none';
+            clonedElement.style.scale = '1';
+            clonedElement.style.margin = '0';
+            clonedElement.style.position = 'relative';
+            clonedElement.style.boxShadow = 'none';
+            clonedElement.style.width = '1000px'; // Consistent width for PDF capture
+            clonedElement.style.height = 'auto';
+          }
+        }
       });
       
       const imgData = canvas.toDataURL('image/png');
@@ -70,16 +112,71 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
         format: 'a4'
       });
 
-      const imgProps = pdf.getImageProperties(imgData);
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgProps = pdf.getImageProperties(imgData);
+      const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      let heightLeft = imgHeight;
+      let position = 0;
 
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+
       pdf.save(`Invoice-${invoice.invoiceNumber}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handleRecordPayment = async () => {
+    if (!invoice || !paymentAmount || isNaN(Number(paymentAmount))) return;
+    
+    const amount = Number(paymentAmount);
+    if (amount <= 0 || amount > (invoice.balanceAmount ?? invoice.total)) {
+      alert('Invalid payment amount');
+      return;
+    }
+
+    setIsSavingPayment(true);
+    try {
+      const newPayment: Payment = {
+        id: Math.random().toString(36).substr(2, 9),
+        amount,
+        date: new Date().toISOString(),
+        method: paymentMethod,
+        note: paymentNote
+      };
+
+      const updatedPaidAmount = (invoice.paidAmount || 0) + amount;
+      const updatedBalanceAmount = invoice.total - updatedPaidAmount;
+      const updatedStatus = updatedBalanceAmount <= 0 ? 'paid' : 'partial';
+
+      await updateDoc(doc(db, 'invoices', invoice.id), {
+        paidAmount: updatedPaidAmount,
+        balanceAmount: updatedBalanceAmount,
+        status: updatedStatus,
+        payments: [...(invoice.payments || []), newPayment]
+      });
+
+      // Update local state if needed, but usually we rely on onSnapshot in parent
+      setIsRecordingPayment(false);
+      setPaymentAmount('');
+      setPaymentNote('');
+    } catch (error) {
+      console.error('Error recording payment:', error);
+      alert('Failed to record payment');
+    } finally {
+      setIsSavingPayment(false);
     }
   };
 
@@ -109,7 +206,33 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
               {invoice.status}
             </span>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-1 sm:gap-4">
+            <div className="hidden sm:flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
+              <span className="text-[10px] font-bold uppercase text-gray-500">Template</span>
+              <select 
+                value={currentTemplate}
+                onChange={(e) => setCurrentTemplate(e.target.value as any)}
+                className="bg-transparent text-[10px] font-bold text-orange-500 focus:outline-none cursor-pointer"
+              >
+                <option value="minimal">Minimal</option>
+                <option value="classic">Classic</option>
+                <option value="professional">Professional</option>
+                <option value="modern">Modern</option>
+              </select>
+            </div>
+            <div className="hidden sm:flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
+              <span className="text-[10px] font-bold uppercase text-gray-500">Zoom</span>
+              <input 
+                type="range" 
+                min="0.5" 
+                max="1.5" 
+                step="0.1" 
+                value={zoom} 
+                onChange={(e) => setZoom(parseFloat(e.target.value))}
+                className="w-24 h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-orange-500"
+              />
+              <span className="text-[10px] font-bold text-orange-500 w-8">{Math.round(zoom * 100)}%</span>
+            </div>
             <button onClick={handlePrint} className="p-1.5 sm:p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-400 hover:text-white">
               <Printer className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
@@ -135,18 +258,22 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
         </div>
 
         {/* Invoice Paper */}
-        <div className="flex-1 overflow-y-auto p-2 sm:p-8 bg-[#060810]/50">
-          <div className="min-w-fit sm:min-w-0 flex justify-center">
+        <div className="flex-1 overflow-auto p-4 sm:p-8 bg-[#060810]/50 flex flex-col lg:flex-row gap-8 items-start justify-center">
+          <div 
+            className="relative flex-shrink-0"
+            style={{ 
+              width: `${1000 * zoom}px`,
+              height: `${1414 * zoom}px`,
+            }}
+          >
             <div 
               id="invoice-paper" 
-              className="bg-white text-black p-6 sm:p-12 rounded-sm shadow-2xl w-full max-w-[800px] min-h-[1123px] flex flex-col print:shadow-none print:p-0 print:m-0 print:w-full origin-top scale-[0.6] sm:scale-100 -mb-[40%] sm:mb-0 relative"
+              className="bg-white text-black p-6 sm:p-12 rounded-sm shadow-2xl w-full min-w-[1000px] min-h-[1414px] flex flex-col print:shadow-none print:p-0 print:m-0 print:w-full origin-top-left absolute top-0 left-0"
+              style={{ 
+                transform: `scale(${zoom})`,
+              }}
             >
-              {/* Status Stamp */}
-              <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-8 rounded-xl px-8 py-4 text-6xl font-black uppercase tracking-widest opacity-[0.08] -rotate-12 pointer-events-none select-none z-0 ${
-                invoice.status === 'paid' ? 'border-green-600 text-green-600' : 'border-amber-600 text-amber-600'
-              }`}>
-                {invoice.status}
-              </div>
+              {/* Status Stamp moved to end of div for z-index purposes */}
             <style>{`
               #invoice-paper { 
                 color: #000000 !important; 
@@ -192,16 +319,16 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
             `}</style>
             
             {/* Template Layouts */}
-            {profile.invoiceSettings?.templateStyle === 'minimal' ? (
+            {currentTemplate === 'minimal' ? (
               <div className="flex flex-col h-full">
                 {/* Minimal Header */}
                 <div className="flex justify-between items-start mb-16 border-b-2 border-black pb-8">
                   <div>
-                    <h1 className="text-4xl font-light tracking-widest uppercase mb-4">{profile.businessName}</h1>
+                    <h1 className="text-4xl font-light tracking-widest uppercase mb-4">{profile.businessName || profile.displayName || 'Your Business Name'}</h1>
                     <div className="text-[10px] text-gray-500 space-y-1">
-                      <p>{profile.address}</p>
-                      <p>GSTIN: {profile.gstin}</p>
-                      <p>PH: {profile.phone}</p>
+                      <p>{profile.address || 'Your Business Address'}</p>
+                      <p>GSTIN: {profile.gstin || 'N/A'}</p>
+                      <p>PH: {profile.phone || 'N/A'}</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -252,6 +379,45 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
                   </tbody>
                 </table>
 
+                {/* GST Breakup Table */}
+                <div className="mb-12">
+                  <h5 className="text-[10px] font-bold uppercase text-gray-400 mb-2">GST Breakup</h5>
+                  <table className="w-full text-[9px] border-collapse border border-gray-200">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="border border-gray-200 p-1 text-left">HSN/SAC</th>
+                        <th className="border border-gray-200 p-1 text-right">Taxable Value</th>
+                        {invoice.gstType === 'CGST_SGST' ? (
+                          <>
+                            <th className="border border-gray-200 p-1 text-right">CGST</th>
+                            <th className="border border-gray-200 p-1 text-right">SGST</th>
+                          </>
+                        ) : (
+                          <th className="border border-gray-200 p-1 text-right">IGST</th>
+                        )}
+                        <th className="border border-gray-200 p-1 text-right">Total Tax</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(gstBreakup).map(([hsn, data]: [string, any]) => (
+                        <tr key={hsn}>
+                          <td className="border border-gray-200 p-1">{hsn}</td>
+                          <td className="border border-gray-200 p-1 text-right">₹{data.taxableAmount.toLocaleString()}</td>
+                          {invoice.gstType === 'CGST_SGST' ? (
+                            <>
+                              <td className="border border-gray-200 p-1 text-right">₹{data.cgst.toLocaleString()} ({data.gstRate/2}%)</td>
+                              <td className="border border-gray-200 p-1 text-right">₹{data.sgst.toLocaleString()} ({data.gstRate/2}%)</td>
+                            </>
+                          ) : (
+                            <td className="border border-gray-200 p-1 text-right">₹{data.igst.toLocaleString()} ({data.gstRate}%)</td>
+                          )}
+                          <td className="border border-gray-200 p-1 text-right font-bold">₹{(data.cgst + data.sgst + data.igst).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
                 <div className="mt-auto grid grid-cols-2 gap-20">
                   <div className="text-[10px] text-gray-400 space-y-4">
                     <div>
@@ -275,16 +441,24 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
                       <span>Total</span>
                       <span className="font-bold">₹{invoice.total.toLocaleString()}</span>
                     </div>
+                    <div className="flex justify-between text-xs pt-2">
+                      <span className="text-gray-400">Paid Amount</span>
+                      <span>₹{(invoice.paidAmount || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-bold pt-2 border-t border-gray-100">
+                      <span>Balance Due</span>
+                      <span>₹{(invoice.balanceAmount ?? invoice.total).toLocaleString()}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            ) : profile.invoiceSettings?.templateStyle === 'classic' ? (
+            ) : currentTemplate === 'classic' ? (
               <div className="flex flex-col h-full border-4 border-double theme-border p-4">
                 {/* Classic Header */}
                 <div className="text-center mb-10 border-b theme-border pb-6">
-                  <h1 className="text-3xl font-bold uppercase mb-2">{profile.businessName}</h1>
-                  <p className="text-sm text-gray-600">{profile.address}</p>
-                  <p className="text-xs text-gray-500 mt-1">GSTIN: {profile.gstin} | Phone: {profile.phone}</p>
+                  <h1 className="text-3xl font-bold uppercase mb-2">{profile.businessName || profile.displayName || 'Your Business Name'}</h1>
+                  <p className="text-sm text-gray-600">{profile.address || 'Your Business Address'}</p>
+                  <p className="text-xs text-gray-500 mt-1">GSTIN: {profile.gstin || 'N/A'} | Phone: {profile.phone || 'N/A'}</p>
                 </div>
 
                 <div className="text-center mb-8">
@@ -366,6 +540,14 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
                       <span>Grand Total:</span>
                       <span>₹{invoice.total.toLocaleString()}</span>
                     </div>
+                    <div className="p-2 flex justify-between text-xs border-t theme-border">
+                      <span>Paid Amount:</span>
+                      <span>₹{(invoice.paidAmount || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="p-2 flex justify-between text-sm font-bold bg-gray-200">
+                      <span>Balance Due:</span>
+                      <span>₹{(invoice.balanceAmount ?? invoice.total).toLocaleString()}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -378,7 +560,7 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
                   </div>
                 </div>
               </div>
-            ) : profile.invoiceSettings?.templateStyle === 'professional' ? (
+            ) : currentTemplate === 'professional' ? (
               <div className="flex flex-col h-full bg-white">
                 {/* Professional Header */}
                 <div className="flex justify-between items-start mb-12 border-b-4 border-black pb-8">
@@ -396,12 +578,12 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
                       </div>
                     )}
                     <div>
-                      <h1 className="text-3xl font-bold uppercase tracking-tight mb-1">{profile.businessName}</h1>
-                      <p className="text-xs text-gray-600 max-w-[300px] leading-relaxed">{profile.address}</p>
+                      <h1 className="text-3xl font-bold uppercase tracking-tight mb-1">{profile.businessName || profile.displayName || 'Your Business Name'}</h1>
+                      <p className="text-xs text-gray-600 max-w-[300px] leading-relaxed">{profile.address || 'Your Business Address'}</p>
                       <div className="mt-2 text-[10px] font-bold space-y-0.5">
-                        <p>GSTIN: {profile.gstin}</p>
-                        <p>PH: {profile.phone}</p>
-                        <p>EMAIL: {profile.email}</p>
+                        <p>GSTIN: {profile.gstin || 'N/A'}</p>
+                        <p>PH: {profile.phone || 'N/A'}</p>
+                        <p>EMAIL: {profile.email || 'N/A'}</p>
                       </div>
                     </div>
                   </div>
@@ -458,6 +640,45 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
                   </tbody>
                 </table>
 
+                {/* GST Breakup Table */}
+                <div className="mb-8">
+                  <h5 className="text-[10px] font-bold uppercase text-gray-400 mb-2">GST Breakup Summary</h5>
+                  <table className="w-full text-[9px] border-collapse border theme-border">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="border theme-border p-1 text-left">HSN/SAC</th>
+                        <th className="border theme-border p-1 text-right">Taxable Value</th>
+                        {invoice.gstType === 'CGST_SGST' ? (
+                          <>
+                            <th className="border theme-border p-1 text-right">CGST</th>
+                            <th className="border theme-border p-1 text-right">SGST</th>
+                          </>
+                        ) : (
+                          <th className="border theme-border p-1 text-right">IGST</th>
+                        )}
+                        <th className="border theme-border p-1 text-right">Total Tax</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(gstBreakup).map(([hsn, data]: [string, any]) => (
+                        <tr key={hsn}>
+                          <td className="border theme-border p-1">{hsn}</td>
+                          <td className="border theme-border p-1 text-right">₹{data.taxableAmount.toLocaleString()}</td>
+                          {invoice.gstType === 'CGST_SGST' ? (
+                            <>
+                              <td className="border theme-border p-1 text-right">₹{data.cgst.toLocaleString()}</td>
+                              <td className="border theme-border p-1 text-right">₹{data.sgst.toLocaleString()}</td>
+                            </>
+                          ) : (
+                            <td className="border theme-border p-1 text-right">₹{data.igst.toLocaleString()}</td>
+                          )}
+                          <td className="border theme-border p-1 text-right font-bold">₹{(data.cgst + data.sgst + data.igst).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
                 <div className="grid grid-cols-2 gap-12">
                   <div>
                     <div className="mb-8 flex justify-between items-start gap-4">
@@ -498,6 +719,14 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
                     <div className="flex justify-between items-center pt-6 border-t-4 border-black">
                       <span className="text-xl font-black uppercase">Total Amount</span>
                       <span className="text-3xl font-black">₹{invoice.total.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2">
+                      <span className="text-[10px] font-bold uppercase text-gray-500">Paid Amount</span>
+                      <span className="text-lg font-bold">₹{(invoice.paidAmount || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                      <span className="text-[10px] font-bold uppercase text-gray-500">Balance Due</span>
+                      <span className="text-xl font-black">₹{(invoice.balanceAmount ?? invoice.total).toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
@@ -543,14 +772,14 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
                       </div>
                     )}
                     <div>
-                      <h1 className="text-2xl font-bold mb-1 tracking-tight">{profile.businessName || 'BillAI Demo Business'}</h1>
-                      <p className="text-[11px] text-gray-500 max-w-[300px] leading-relaxed font-medium">{profile.address || '123 MG Road, Jaipur, Rajasthan 302001'}</p>
+                      <h1 className="text-2xl font-bold mb-1 tracking-tight">{profile.businessName || profile.displayName || 'Your Business Name'}</h1>
+                      <p className="text-[11px] text-gray-500 max-w-[300px] leading-relaxed font-medium">{profile.address || 'Your Business Address'}</p>
                       <div className="mt-4 space-y-1">
                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                          <span className="w-1 h-1 bg-gray-300 rounded-full" /> GSTIN: <span className="text-black font-mono">{profile.gstin || '08ABCDE1234F1Z5'}</span>
+                          <span className="w-1 h-1 bg-gray-300 rounded-full" /> GSTIN: <span className="text-black font-mono">{profile.gstin || 'N/A'}</span>
                         </p>
                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                          <span className="w-1 h-1 bg-gray-300 rounded-full" /> Phone: <span className="text-black">{profile.phone || '+91 98765 43210'}</span>
+                          <span className="w-1 h-1 bg-gray-300 rounded-full" /> Phone: <span className="text-black">{profile.phone || 'N/A'}</span>
                         </p>
                       </div>
                     </div>
@@ -627,6 +856,50 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
                   </table>
                 </div>
 
+                {/* GST Breakup Table */}
+                <div className="mb-10">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-1 h-3 theme-bg rounded-full" />
+                    <h5 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">GST Analysis</h5>
+                  </div>
+                  <div className="bg-gray-50/30 rounded-2xl border border-gray-100 overflow-hidden">
+                    <table className="w-full text-[9px] border-collapse">
+                      <thead>
+                        <tr className="bg-gray-900 text-white">
+                          <th className="px-3 py-2 text-left">HSN/SAC</th>
+                          <th className="px-3 py-2 text-right">Taxable Value</th>
+                          {invoice.gstType === 'CGST_SGST' ? (
+                            <>
+                              <th className="px-3 py-2 text-right">CGST</th>
+                              <th className="px-3 py-2 text-right">SGST</th>
+                            </>
+                          ) : (
+                            <th className="px-3 py-2 text-right">IGST</th>
+                          )}
+                          <th className="px-3 py-2 text-right">Total Tax</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {Object.entries(gstBreakup).map(([hsn, data]: [string, any]) => (
+                          <tr key={hsn}>
+                            <td className="px-3 py-2 font-mono">{hsn}</td>
+                            <td className="px-3 py-2 text-right font-mono">₹{data.taxableAmount.toLocaleString()}</td>
+                            {invoice.gstType === 'CGST_SGST' ? (
+                              <>
+                                <td className="px-3 py-2 text-right font-mono">₹{data.cgst.toLocaleString()}</td>
+                                <td className="px-3 py-2 text-right font-mono">₹{data.sgst.toLocaleString()}</td>
+                              </>
+                            ) : (
+                              <td className="px-3 py-2 text-right font-mono">₹{data.igst.toLocaleString()}</td>
+                            )}
+                            <td className="px-3 py-2 text-right font-bold font-mono">₹{(data.cgst + data.sgst + data.igst).toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
                 {/* Totals Section */}
                 <div className="mt-10 grid grid-cols-2 gap-12">
                   <div className="space-y-6">
@@ -696,6 +969,14 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
                         <span className="text-2xl font-black theme-text font-mono tracking-tighter">₹{invoice.total.toLocaleString()}</span>
                       </div>
                     </div>
+                    <div className="pt-2 flex justify-between items-center text-[10px]">
+                      <span className="text-gray-400 font-bold uppercase">Paid Amount</span>
+                      <span className="font-bold">₹{(invoice.paidAmount || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="pt-2 border-t border-gray-100 flex justify-between items-center">
+                      <span className="text-[10px] font-bold uppercase tracking-tight">Balance Due</span>
+                      <span className="text-lg font-black theme-text font-mono">₹{(invoice.balanceAmount ?? invoice.total).toLocaleString()}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -725,9 +1006,162 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ isOpen, 
                 </div>
               </>
             )}
+
+              {/* Status Stamp - Moved here for better visibility */}
+              <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-8 rounded-xl px-8 py-4 text-6xl font-black uppercase tracking-widest opacity-[0.08] -rotate-12 pointer-events-none select-none z-10 ${
+                invoice.status === 'paid' ? 'border-green-600 text-green-600' : 'border-amber-600 text-amber-600'
+              }`}>
+                {invoice.status}
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Sidebar */}
+          <div className="w-full lg:w-80 space-y-6">
+            {/* Payment Summary */}
+            <div className="glass p-6 rounded-3xl border border-white/5 space-y-4">
+              <div className="flex items-center gap-2 text-orange-500 mb-2">
+                <CreditCard className="w-5 h-5" />
+                <h3 className="font-bold uppercase tracking-widest text-xs">Payment Summary</h3>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 text-xs">Total Amount</span>
+                  <span className="font-bold font-mono">₹{invoice.total.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400 text-xs">Paid Amount</span>
+                  <span className="font-bold text-green-500 font-mono">₹{(invoice.paidAmount || 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center pt-3 border-t border-white/5">
+                  <span className="text-gray-400 text-xs font-bold">Balance Due</span>
+                  <span className="font-black text-xl text-orange-500 font-mono">₹{(invoice.balanceAmount ?? invoice.total).toLocaleString()}</span>
+                </div>
+              </div>
+
+              {invoice.status !== 'paid' && (
+                <button 
+                  onClick={() => setIsRecordingPayment(true)}
+                  className="w-full btn-orange py-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold"
+                >
+                  <Plus className="w-4 h-4" /> Record Payment
+                </button>
+              )}
+            </div>
+
+            {/* Payment History */}
+            <div className="glass p-6 rounded-3xl border border-white/5 space-y-4">
+              <div className="flex items-center gap-2 text-gray-400 mb-2">
+                <History className="w-5 h-5" />
+                <h3 className="font-bold uppercase tracking-widest text-xs">Payment History</h3>
+              </div>
+
+              <div className="space-y-4">
+                {invoice.payments && invoice.payments.length > 0 ? (
+                  invoice.payments.map((payment, idx) => (
+                    <div key={payment.id || idx} className="p-3 bg-white/5 rounded-2xl border border-white/5 space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-sm">₹{payment.amount.toLocaleString()}</span>
+                        <span className="text-[10px] text-gray-500">{new Date(payment.date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[10px]">
+                        <span className="text-gray-400">{payment.method}</span>
+                        {payment.note && <span className="text-gray-500 italic truncate max-w-[100px]">{payment.note}</span>}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-gray-500 text-xs py-4">No payments recorded yet</p>
+                )}
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Record Payment Modal Overlay */}
+        <AnimatePresence>
+          {isRecordingPayment && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsRecordingPayment(false)}
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative w-full max-w-md bg-[#0C1020] border border-white/10 rounded-[2rem] p-8 shadow-2xl"
+              >
+                <h3 className="text-xl font-bold mb-6">Payment Record Karo</h3>
+                
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Amount (₹)</label>
+                    <div className="relative">
+                      <IndianRupee className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input 
+                        type="number" 
+                        value={paymentAmount}
+                        onChange={(e) => setPaymentAmount(e.target.value)}
+                        placeholder="Enter amount"
+                        className="input-dark w-full pl-10"
+                        max={invoice.balanceAmount ?? invoice.total}
+                      />
+                    </div>
+                    <p className="text-[10px] text-gray-500">Max: ₹{(invoice.balanceAmount ?? invoice.total).toLocaleString()}</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Method</label>
+                    <select 
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="input-dark w-full appearance-none"
+                    >
+                      <option value="Cash">Cash</option>
+                      <option value="Bank Transfer">Bank Transfer</option>
+                      <option value="UPI">UPI</option>
+                      <option value="Cheque">Cheque</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Note (Optional)</label>
+                    <input 
+                      type="text" 
+                      value={paymentNote}
+                      onChange={(e) => setPaymentNote(e.target.value)}
+                      placeholder="e.g. Received via GPay"
+                      className="input-dark w-full"
+                    />
+                  </div>
+
+                  <div className="flex gap-4 pt-4">
+                    <button 
+                      onClick={() => setIsRecordingPayment(false)}
+                      className="flex-1 py-3 rounded-xl border border-white/10 hover:bg-white/5 font-bold transition-all text-sm"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={handleRecordPayment}
+                      disabled={isSavingPayment || !paymentAmount}
+                      className="flex-[2] btn-orange flex items-center justify-center gap-2 disabled:opacity-50 text-sm"
+                    >
+                      {isSavingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                      Payment Add Karo
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       <style>{`
