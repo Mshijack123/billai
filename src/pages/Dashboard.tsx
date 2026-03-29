@@ -59,21 +59,33 @@ import { useInvoiceLimit } from '../hooks/useInvoiceLimit';
 
 const StatCard = ({ title, value, label, trend, icon: Icon, color }: any) => (
   <motion.div 
-    whileHover={{ y: -5, borderColor: 'rgba(255, 92, 26, 0.3)' }}
-    className="glass p-6 rounded-[2rem] border border-white/5 transition-all"
+    whileHover={{ y: -5, borderColor: 'rgba(255, 255, 255, 0.1)' }}
+    className="glass p-6 rounded-[2.5rem] border border-white/5 transition-all relative overflow-hidden group"
   >
-    <div className="flex justify-between items-start mb-4">
-      <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", color)}>
+    <div className={cn("absolute -right-4 -top-4 w-24 h-24 blur-3xl opacity-10 transition-opacity group-hover:opacity-20", color)} />
+    
+    <div className="flex justify-between items-start mb-6">
+      <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg", color)}>
         <Icon className="w-6 h-6 text-white" />
       </div>
-      <div className={cn("flex items-center gap-1 text-xs font-bold", trend > 0 ? "text-green-500" : "text-amber-500")}>
-        {trend > 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+      <div className={cn(
+        "flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold", 
+        trend > 0 ? "bg-green-500/10 text-green-500" : "bg-amber-500/10 text-amber-500"
+      )}>
+        {trend > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
         {Math.abs(trend)}%
       </div>
     </div>
-    <p className="text-3xl font-display font-bold mb-1">{value}</p>
-    <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">{title}</p>
-    <p className="text-[10px] text-gray-600 mt-2">{label}</p>
+    
+    <div className="space-y-1">
+      <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">{title}</p>
+      <p className="text-3xl font-display font-bold tracking-tight">{value}</p>
+    </div>
+    
+    <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+      <p className="text-[10px] text-gray-500 font-medium">{label}</p>
+      <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+    </div>
   </motion.div>
 );
 
@@ -127,13 +139,13 @@ const Dashboard = () => {
         totalInvoices: docs.length
       });
 
-      // Calculate chart data
+      // Calculate chart data (Last 12 Months)
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const now = new Date();
-      const last6Months = [];
-      for (let i = 5; i >= 0; i--) {
+      const last12Months = [];
+      for (let i = 11; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        last6Months.push({
+        last12Months.push({
           label: months[d.getMonth()],
           year: d.getFullYear(),
           month: d.getMonth(),
@@ -143,23 +155,34 @@ const Dashboard = () => {
 
       docs.forEach(inv => {
         const d = new Date(inv.date);
-        const monthIndex = last6Months.findIndex(m => m.month === d.getMonth() && m.year === d.getFullYear());
+        const monthIndex = last12Months.findIndex(m => m.month === d.getMonth() && m.year === d.getFullYear());
         if (monthIndex !== -1) {
-          // Add paid amount to revenue chart
-          last6Months[monthIndex].total += (inv.paidAmount || 0);
+          last12Months[monthIndex].total += (inv.paidAmount || 0);
         }
       });
 
       setChartData({
-        labels: last6Months.map(m => m.label),
+        labels: last12Months.map(m => m.label),
         datasets: [
           {
             fill: true,
             label: 'Revenue',
-            data: last6Months.map(m => m.total),
+            data: last12Months.map(m => m.total),
             borderColor: '#FF5C1A',
-            backgroundColor: 'rgba(255, 92, 26, 0.1)',
+            backgroundColor: (context: any) => {
+              const ctx = context.chart.ctx;
+              const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+              gradient.addColorStop(0, 'rgba(255, 92, 26, 0.2)');
+              gradient.addColorStop(1, 'rgba(255, 92, 26, 0)');
+              return gradient;
+            },
             tension: 0.4,
+            borderWidth: 3,
+            pointRadius: 4,
+            pointBackgroundColor: '#FF5C1A',
+            pointBorderColor: '#0C1020',
+            pointBorderWidth: 2,
+            pointHoverRadius: 6,
           },
         ],
       });
@@ -305,70 +328,96 @@ const Dashboard = () => {
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Revenue Chart */}
-        <div className="lg:col-span-2 glass p-8 rounded-[2.5rem] border border-white/5">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h3 className="text-xl font-bold">Revenue Trend</h3>
-              <p className="text-xs text-gray-500">Monthly performance overview</p>
+        <div className="lg:col-span-2 glass p-8 rounded-[2.5rem] border border-white/5 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full blur-[100px] -mr-32 -mt-32" />
+          
+          <div className="relative z-10">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+              <div>
+                <h3 className="text-xl font-bold">Revenue Trend</h3>
+                <p className="text-xs text-gray-500">Monthly business performance overview</p>
+              </div>
+              <div className="flex items-center gap-2 bg-white/5 p-1 rounded-xl border border-white/10">
+                <button className="px-4 py-1.5 rounded-lg bg-orange-500 text-white text-[10px] font-bold uppercase tracking-widest transition-all">Monthly</button>
+                <button className="px-4 py-1.5 rounded-lg hover:bg-white/5 text-gray-500 text-[10px] font-bold uppercase tracking-widest transition-all">Yearly</button>
+              </div>
             </div>
-            <select className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold focus:outline-none">
-              <option>Last 6 Months</option>
-              <option>Last Year</option>
-            </select>
-          </div>
-          <div className="h-80">
-            <Line data={chartData} options={chartOptions} />
+            <div className="h-80 w-full">
+              <Line data={chartData} options={chartOptions} />
+            </div>
           </div>
         </div>
 
         {/* Quick Actions */}
-        <div className="glass p-8 rounded-[2.5rem] border border-white/5 flex flex-col gap-4">
-          <h3 className="text-xl font-bold mb-2">Quick karo</h3>
-          <button 
-            onClick={() => canCreateInvoice ? setIsAIModalOpen(true) : openPricing()}
-            className={cn(
-              "w-full p-6 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl text-left group transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-orange-500/20",
-              !canCreateInvoice && "opacity-50 grayscale cursor-not-allowed"
-            )}
-          >
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                <Plus className="w-6 h-6 text-white" />
+        <div className="space-y-6">
+          <div className="glass p-8 rounded-[2.5rem] border border-white/5 flex flex-col gap-4 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            
+            <h3 className="text-xl font-bold mb-2 relative z-10">Quick Actions</h3>
+            
+            <button 
+              onClick={() => canCreateInvoice ? setIsAIModalOpen(true) : openPricing()}
+              className={cn(
+                "w-full p-6 bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl text-left group/btn transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-orange-500/20 relative overflow-hidden z-10",
+                !canCreateInvoice && "opacity-50 grayscale cursor-not-allowed"
+              )}
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-16 -mt-16 group-hover/btn:scale-150 transition-transform duration-700" />
+              
+              <div className="relative z-10">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-inner">
+                    <Plus className="w-6 h-6 text-white" />
+                  </div>
+                  <Sparkles className="w-5 h-5 text-white/50 group-hover/btn:text-white group-hover/btn:rotate-12 transition-all" />
+                </div>
+                <p className="text-xl font-bold text-white mb-1">AI Invoice</p>
+                <p className="text-xs text-white/70">Hindi mein type karke invoice banayein</p>
               </div>
-              <Sparkles className="w-5 h-5 text-white/50 group-hover:text-white transition-colors" />
-            </div>
-            <p className="text-lg font-bold text-white mb-1">AI se Invoice Banao</p>
-            <p className="text-xs text-white/70">Hindi mein type karo</p>
-          </button>
+            </button>
 
-          <button 
-            onClick={() => canCreateInvoice ? setIsManualModalOpen(true) : openPricing()}
-            className={cn(
-              "w-full p-4 border border-white/10 rounded-2xl text-left transition-all flex items-center gap-4",
-              canCreateInvoice ? "hover:bg-white/5" : "opacity-50 grayscale cursor-not-allowed"
-            )}
-          >
-            <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
-              <FileText className="w-5 h-5 text-gray-400" />
-            </div>
-            <div>
-              <p className="text-sm font-bold">Manual Invoice</p>
-              <p className="text-[10px] text-gray-500">Purana tareeka</p>
-            </div>
-          </button>
+            <div className="grid grid-cols-2 gap-3 relative z-10">
+              <button 
+                onClick={() => canCreateInvoice ? setIsManualModalOpen(true) : openPricing()}
+                className={cn(
+                  "p-4 bg-white/5 border border-white/10 rounded-2xl text-left transition-all hover:bg-white/10 group/item",
+                  !canCreateInvoice && "opacity-50 grayscale cursor-not-allowed"
+                )}
+              >
+                <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center mb-3 group-hover/item:scale-110 transition-transform">
+                  <FileText className="w-5 h-5 text-gray-400 group-hover/item:text-orange-500 transition-colors" />
+                </div>
+                <p className="text-xs font-bold">Manual</p>
+                <p className="text-[9px] text-gray-500">Standard way</p>
+              </button>
 
-          <Link 
-            to="/customers"
-            className="w-full p-4 border border-white/10 rounded-2xl text-left hover:bg-white/5 transition-all flex items-center gap-4"
-          >
-            <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
-              <Plus className="w-5 h-5 text-gray-400" />
+              <Link 
+                to="/customers?add=true"
+                className="p-4 bg-white/5 border border-white/10 rounded-2xl text-left hover:bg-white/10 group/item relative z-10"
+              >
+                <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center mb-3 group-hover/item:scale-110 transition-transform">
+                  <Plus className="w-5 h-5 text-gray-400 group-hover/item:text-orange-500 transition-colors" />
+                </div>
+                <p className="text-xs font-bold">Customer</p>
+                <p className="text-[9px] text-gray-500">Add new client</p>
+              </Link>
             </div>
-            <div>
-              <p className="text-sm font-bold">Customer Jodon</p>
-              <p className="text-[10px] text-gray-500">Naya client add karo</p>
+          </div>
+
+          {/* Pro Tip Card */}
+          <div className="glass p-6 rounded-[2.5rem] border border-orange-500/20 bg-orange-500/5 relative overflow-hidden">
+            <div className="flex gap-4 items-start relative z-10">
+              <div className="w-10 h-10 bg-orange-500/20 rounded-xl flex-shrink-0 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-orange-500" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-orange-500 mb-1">Pro Tip!</p>
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  Aap voice commands se bhi invoice bana sakte hain. Bas mic icon par click karein.
+                </p>
+              </div>
             </div>
-          </Link>
+          </div>
         </div>
       </div>
 

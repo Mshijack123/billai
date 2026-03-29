@@ -218,6 +218,15 @@ const ReportsPage = () => {
               console.warn('Failed to sanitize style tag:', e);
             }
           }
+
+          // Also sanitize inline styles
+          const allElements = clonedDoc.getElementsByTagName('*');
+          for (let i = 0; i < allElements.length; i++) {
+            const el = allElements[i] as HTMLElement;
+            if (el.style && el.style.cssText) {
+              el.style.cssText = el.style.cssText.replace(/oklch\([^)]+\)/g, '#71717a');
+            }
+          }
         }
       });
       

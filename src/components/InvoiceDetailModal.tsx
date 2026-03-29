@@ -34,6 +34,23 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
   const [currentTemplate, setCurrentTemplate] = useState(profile?.invoiceSettings?.templateStyle || 'modern');
 
   React.useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        const padding = window.innerWidth < 640 ? 24 : 64;
+        const availableWidth = window.innerWidth - padding;
+        const initialZoom = Math.min(1, availableWidth / 1000);
+        setZoom(initialZoom);
+      } else {
+        setZoom(0.8); // Default zoom for desktop
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isOpen]);
+
+  React.useEffect(() => {
     if (isOpen && autoDownload && invoice) {
       const timer = setTimeout(() => {
         handleDownload();
@@ -125,6 +142,15 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
               styleTags[i].innerHTML = styleTags[i].innerHTML.replace(/oklch\([^)]+\)/g, '#71717a');
             } catch (e) {
               console.warn('Failed to sanitize style tag:', e);
+            }
+          }
+
+          // Also sanitize inline styles
+          const allElements = clonedDoc.getElementsByTagName('*');
+          for (let i = 0; i < allElements.length; i++) {
+            const el = allElements[i] as HTMLElement;
+            if (el.style && el.style.cssText) {
+              el.style.cssText = el.style.cssText.replace(/oklch\([^)]+\)/g, '#71717a');
             }
           }
 
@@ -255,9 +281,9 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
         className="relative w-full max-w-4xl bg-[#0C1020] border border-white/10 sm:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col h-full sm:h-auto sm:max-h-[90vh]"
       >
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-white/5 flex items-center justify-between bg-[#0C1020] sticky top-0 z-10">
+        <div className="p-3 sm:p-6 border-b border-white/5 flex flex-wrap items-center justify-between bg-[#0C1020] sticky top-0 z-10 gap-2">
           <div className="flex items-center gap-2 sm:gap-4">
-            <h2 className="text-sm sm:text-xl font-bold truncate max-w-[120px] sm:max-w-none">{invoice.invoiceNumber}</h2>
+            <h2 className="text-sm sm:text-xl font-bold truncate max-w-[100px] sm:max-w-none">{invoice.invoiceNumber}</h2>
             <span className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-bold uppercase tracking-widest ${
               invoice.status === 'paid' ? 'bg-green-500/10 text-green-500' : 'bg-amber-500/10 text-amber-500'
             }`}>
@@ -265,8 +291,9 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
             </span>
           </div>
           <div className="flex items-center gap-1 sm:gap-4">
-            <div className="hidden sm:flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
-              <span className="text-[10px] font-bold uppercase text-gray-500">Template</span>
+            <div className="flex items-center gap-2 bg-white/5 px-2 sm:px-3 py-1.5 rounded-xl border border-white/10">
+              <span className="hidden sm:inline text-[10px] font-bold uppercase text-gray-500">Template</span>
+              <Layout className="w-3 h-3 sm:hidden text-gray-500" />
               <select 
                 value={currentTemplate}
                 onChange={(e) => setCurrentTemplate(e.target.value as any)}
@@ -274,24 +301,24 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
               >
                 <option value="minimal">Minimal</option>
                 <option value="classic">Classic</option>
-                <option value="professional">Professional</option>
+                <option value="professional">Prof</option>
                 <option value="modern">Modern</option>
               </select>
             </div>
-            <div className="hidden sm:flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
-              <span className="text-[10px] font-bold uppercase text-gray-500">Zoom</span>
+            <div className="flex items-center gap-2 bg-white/5 px-2 sm:px-3 py-1.5 rounded-xl border border-white/10">
+              <span className="hidden sm:inline text-[10px] font-bold uppercase text-gray-500">Zoom</span>
               <input 
                 type="range" 
-                min="0.5" 
+                min="0.1" 
                 max="1.5" 
-                step="0.1" 
+                step="0.05" 
                 value={zoom} 
                 onChange={(e) => setZoom(parseFloat(e.target.value))}
-                className="w-24 h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                className="w-12 sm:w-24 h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-orange-500"
               />
               <span className="text-[10px] font-bold text-orange-500 w-8">{Math.round(zoom * 100)}%</span>
             </div>
-            <button onClick={handlePrint} className="p-1.5 sm:p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-400 hover:text-white">
+            <button onClick={handlePrint} className="hidden sm:inline-flex p-1.5 sm:p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-400 hover:text-white">
               <Printer className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
             <button 
@@ -316,9 +343,9 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
         </div>
 
         {/* Invoice Paper */}
-        <div className="flex-1 overflow-auto p-4 sm:p-8 bg-[#060810]/50 flex flex-col lg:flex-row gap-8 items-start justify-center">
+        <div className="flex-1 overflow-auto p-3 sm:p-8 bg-[#060810]/50 flex flex-col lg:flex-row gap-8 items-start justify-start lg:justify-center">
           <div 
-            className="relative flex-shrink-0"
+            className="relative flex-shrink-0 mx-auto lg:mx-0"
             style={{ 
               width: `${1000 * zoom}px`,
               height: `${1414 * zoom}px`,
@@ -326,7 +353,7 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
           >
             <div 
               id="invoice-paper" 
-              className="bg-white text-black p-6 sm:p-12 rounded-sm shadow-2xl w-full min-w-[1000px] min-h-[1414px] flex flex-col print:shadow-none print:p-0 print:m-0 print:w-full origin-top-left absolute top-0 left-0"
+              className="bg-white text-black p-12 rounded-sm shadow-2xl min-w-[1000px] min-h-[1414px] flex flex-col origin-top-left absolute top-0 left-0"
               style={{ 
                 transform: `scale(${zoom})`,
               }}
@@ -1278,11 +1305,13 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
             position: absolute;
             left: 0;
             top: 0;
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            box-shadow: none;
+            width: 100% !important;
+            min-width: 0 !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 40px !important;
+            box-shadow: none !important;
+            transform: none !important;
           }
         }
       `}</style>
