@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -33,14 +33,14 @@ const SidebarItem = ({ to, icon: Icon, label, active }: { to: string, icon: any,
   <Link
     to={to}
     className={cn(
-      "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+      "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group",
       active 
-        ? "bg-orange-500/10 text-orange-500 border-l-4 border-orange-500" 
-        : "text-gray-400 hover:bg-[var(--bg-primary)]/5 hover:text-[var(--text-primary)]"
+        ? "bg-orange-500 text-white shadow-lg shadow-orange-500/25 scale-[1.02]" 
+        : "text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]/5 hover:text-[var(--text-primary)]"
     )}
   >
-    <Icon className={cn("w-5 h-5", active ? "text-orange-500" : "text-gray-400 group-hover:text-[var(--text-primary)]")} />
-    <span className="font-medium">{label}</span>
+    <Icon className={cn("w-5 h-5 transition-transform group-hover:scale-110", active ? "text-white" : "text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]")} />
+    <span className="font-bold text-sm tracking-tight">{label}</span>
   </Link>
 );
 
@@ -49,6 +49,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
   const { openPricing } = usePricing();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [isProfileOpen, setIsProfileOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -85,9 +86,9 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] flex transition-colors duration-300">
       {/* Sidebar Desktop */}
       <aside className="hidden lg:flex flex-col w-64 border-r border-[var(--border-color)] bg-[var(--bg-secondary)] p-6">
-        <div className="flex items-center gap-2 mb-10 px-2">
-          <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center font-bold text-white">B</div>
-          <span className="text-xl font-bold tracking-tight">Bill<span className="text-orange-500">AI</span></span>
+        <div className="flex items-center gap-3 mb-10 px-2 group cursor-pointer">
+          <div className="w-9 h-9 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-orange-500/20 group-hover:rotate-12 transition-transform">B</div>
+          <span className="text-xl font-bold tracking-tighter">Bill<span className="text-orange-500">AI</span></span>
         </div>
 
         <nav className="flex-1 space-y-2">
@@ -134,11 +135,11 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
               className="fixed top-0 left-0 bottom-0 w-72 bg-[var(--bg-secondary)] z-50 p-6 lg:hidden"
             >
               <div className="flex items-center justify-between mb-10">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center font-bold text-white">B</div>
-                  <span className="text-xl font-bold tracking-tight">Bill<span className="text-orange-500">AI</span></span>
+                <div className="flex items-center gap-3 group cursor-pointer">
+                  <div className="w-9 h-9 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-orange-500/20 group-hover:rotate-12 transition-transform">B</div>
+                  <span className="text-xl font-bold tracking-tighter">Bill<span className="text-orange-500">AI</span></span>
                 </div>
-                <button onClick={() => setIsSidebarOpen(false)}>
+                <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-[var(--bg-primary)]/5 rounded-xl transition-colors">
                   <X className="w-6 h-6 text-[var(--text-secondary)]" />
                 </button>
               </div>
@@ -160,48 +161,59 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
       <main className="flex-1 flex flex-col min-w-0">
         <header className="h-16 border-b border-[var(--border-color)] bg-[var(--bg-primary)]/80 backdrop-blur-md sticky top-0 z-30 px-4 lg:px-8 flex items-center justify-between transition-colors duration-300">
           <div className="flex items-center gap-4">
-            <button className="lg:hidden" onClick={() => setIsSidebarOpen(true)}>
+            <button 
+              className="lg:hidden p-2 hover:bg-[var(--bg-secondary)] rounded-xl transition-colors active:scale-95" 
+              onClick={() => setIsSidebarOpen(true)}
+            >
               <Menu className="w-6 h-6 text-[var(--text-secondary)]" />
             </button>
-            <div>
-              <h1 className="text-lg font-bold capitalize">{location.pathname.split('/')[1] || 'Dashboard'}</h1>
-              <p className="text-xs text-[var(--text-secondary)] hidden sm:block">Welcome back, {profile?.displayName}</p>
+            <div className="hidden sm:block">
+              <h1 className="text-lg font-bold capitalize tracking-tight">{location.pathname.split('/')[1] || 'Dashboard'}</h1>
+              <p className="text-[10px] text-[var(--text-secondary)] font-bold uppercase tracking-widest">Welcome back, {profile?.displayName?.split(' ')[0]}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-6">
-            <div className="relative hidden md:block">
-              <Search className="w-4 h-4 text-[var(--text-secondary)] absolute left-3 top-1/2 -translate-y-1/2" />
+          <div className="flex items-center gap-3 sm:gap-4">
+            <button 
+              onClick={() => navigate('/invoices')}
+              className="hidden lg:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl text-xs font-bold hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/25 active:scale-95 border border-white/10"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Quick Create</span>
+            </button>
+
+            <div className="relative hidden md:block group">
+              <Search className="w-4 h-4 text-[var(--text-secondary)] absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-orange-500 transition-colors" />
               <input 
                 type="text" 
-                placeholder="Search..." 
-                className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-full py-1.5 pl-10 pr-4 text-sm focus:outline-none focus:border-orange-500/50 w-64 text-[var(--text-primary)]"
+                placeholder="Search anything..." 
+                className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:border-orange-500/50 w-64 text-[var(--text-primary)] transition-all focus:w-80 focus:shadow-lg focus:shadow-orange-500/5"
               />
             </div>
 
             {/* Theme Toggle */}
             <button 
               onClick={toggleTheme}
-              className="p-2 text-[var(--text-secondary)] hover:text-orange-500 transition-colors rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)]"
+              className="p-2.5 text-[var(--text-secondary)] hover:text-orange-500 transition-all rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] hover:border-orange-500/30 hover:shadow-lg hover:shadow-orange-500/5 active:scale-95"
               title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             >
               {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
 
-            <button className="relative p-2 text-[var(--text-secondary)] hover:text-orange-500 transition-colors">
+            <button className="relative p-2.5 text-[var(--text-secondary)] hover:text-orange-500 transition-all rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] hover:border-orange-500/30 hover:shadow-lg hover:shadow-orange-500/5 active:scale-95">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-orange-500 rounded-full border-2 border-[var(--bg-primary)]"></span>
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-orange-500 rounded-full border-2 border-[var(--bg-secondary)]"></span>
             </button>
             <div className="relative" ref={dropdownRef}>
               <button 
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-3 hover:bg-[var(--bg-secondary)] p-1 rounded-full transition-colors"
+                className="flex items-center gap-3 hover:bg-[var(--bg-secondary)] p-1.5 pr-4 rounded-full border border-transparent hover:border-[var(--border-color)] transition-all active:scale-95 group"
               >
                 <div className="text-right hidden sm:block">
-                  <p className="text-sm font-medium">{profile?.displayName}</p>
-                  <p className="text-[10px] text-orange-500 font-bold uppercase tracking-wider">{profile?.plan} Plan</p>
+                  <p className="text-sm font-bold group-hover:text-orange-500 transition-colors">{profile?.displayName}</p>
+                  <p className="text-[10px] text-orange-500 font-bold uppercase tracking-widest">{profile?.plan} Plan</p>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center font-bold text-white border-2 border-white/10">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center font-bold text-white border-2 border-white/20 shadow-lg shadow-orange-500/20 group-hover:scale-105 transition-transform">
                   {profile?.displayName?.charAt(0)}
                 </div>
               </button>
