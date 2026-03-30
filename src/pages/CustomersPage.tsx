@@ -17,7 +17,7 @@ import {
 import { useFirebase } from '../components/FirebaseProvider';
 import { usePricing } from '../components/PricingContext';
 import { useInvoiceLimit } from '../hooks/useInvoiceLimit';
-import { db, collection, query, where, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc, handleFirestoreError, OperationType } from '../firebase';
+import { db, collection, query, where, onSnapshot, addDoc, updateDoc, serverTimestamp, deleteDoc, doc, handleFirestoreError, OperationType } from '../firebase';
 import { Customer, Invoice } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { INDIAN_STATES } from '../lib/gst-calculator';
@@ -113,6 +113,7 @@ const CustomersPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [customerInvoices, setCustomerInvoices] = useState<Invoice[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -202,12 +203,20 @@ const CustomersPage = () => {
 
     setIsSaving(true);
     try {
-      await addDoc(collection(db, 'customers'), {
-        ...formData,
-        businessId: profile.uid,
-        createdAt: new Date().toISOString()
-      });
+      if (editingCustomer) {
+        await updateDoc(doc(db, 'customers', editingCustomer.id), {
+          ...formData,
+          updatedAt: new Date().toISOString()
+        });
+      } else {
+        await addDoc(collection(db, 'customers'), {
+          ...formData,
+          businessId: profile.uid,
+          createdAt: new Date().toISOString()
+        });
+      }
       setIsAddModalOpen(false);
+      setEditingCustomer(null);
       setFormData({
         name: '',
         phone: '',
@@ -222,6 +231,20 @@ const CustomersPage = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const openEditModal = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setFormData({
+      name: customer.name,
+      phone: customer.phone,
+      email: customer.email || '',
+      businessName: customer.businessName || '',
+      gstin: customer.gstin || '',
+      state: customer.state,
+      address: customer.address || ''
+    });
+    setIsAddModalOpen(true);
   };
 
   const filteredCustomers = customers.filter(c => 
@@ -344,6 +367,12 @@ const CustomersPage = () => {
                 
                 <div className="flex gap-3">
                   <button 
+                    onClick={() => openEditModal(selectedCustomer)}
+                    className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold hover:bg-white/10 transition-all"
+                  >
+                    Edit Details
+                  </button>
+                  <button 
                     onClick={() => {
                       if (!canCreateInvoice) {
                         openPricing();
@@ -358,7 +387,6 @@ const CustomersPage = () => {
                   >
                     Naya Invoice Banao
                   </button>
-                  <button className="px-4 py-2 border border-white/10 rounded-xl text-xs font-bold hover:bg-white/5">Reminder Bhejo</button>
                 </div>
               </div>
 
@@ -441,8 +469,14 @@ const CustomersPage = () => {
               className="relative w-full max-w-lg bg-[#0C1020] border border-white/10 rounded-[2rem] p-8 shadow-2xl"
             >
               <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-bold">Naya Customer Jodon</h2>
-                <button onClick={() => setIsAddModalOpen(false)} className="p-2 hover:bg-white/5 rounded-lg">
+                <h2 className="text-2xl font-bold">{editingCustomer ? 'Customer Details Update Karein' : 'Naya Customer Jodon'}</h2>
+                <button 
+                  onClick={() => {
+                    setIsAddModalOpen(false);
+                    setEditingCustomer(null);
+                  }} 
+                  className="p-2 hover:bg-white/5 rounded-lg"
+                >
                   <X className="w-6 h-6 text-gray-500" />
                 </button>
               </div>
@@ -525,8 +559,8 @@ const CustomersPage = () => {
                   />
                 </div>
 
-                <button type="submit" className="btn-orange w-full mt-4">
-                  Customer Save karo
+                <button type="submit" disabled={isSaving} className="btn-orange w-full mt-4">
+                  {isSaving ? 'Saving...' : (editingCustomer ? 'Update Karein' : 'Customer Save karo')}
                 </button>
               </form>
             </motion.div>

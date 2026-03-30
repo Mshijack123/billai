@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom';
 import * as THREE from 'three';
 import { motion } from 'motion/react';
 import { gsap } from 'gsap';
-import { CheckCircle2, ArrowRight, Zap, Shield, FileText, Globe, BarChart3, Users } from 'lucide-react';
+import { CheckCircle2, ArrowRight, Zap, Shield, FileText, Globe, BarChart3, Users, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../components/ThemeContext';
 
 const LandingPage = () => {
+  const { theme, toggleTheme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -81,24 +83,32 @@ const LandingPage = () => {
   }, []);
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden selection:bg-orange-500/30">
+    <div className="relative min-h-screen overflow-x-hidden selection:bg-orange-500/30 bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <canvas ref={canvasRef} className="fixed inset-0 -z-10 pointer-events-none" />
       
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 flex items-center justify-between glass-dark m-4 rounded-2xl">
+      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 flex items-center justify-between glass m-4 rounded-2xl border border-[var(--border-color)]">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center font-bold text-white">B</div>
           <span className="text-xl font-display font-bold tracking-tight">Bill<span className="text-orange-500">AI</span></span>
         </div>
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
-          <a href="#features" className="hover:text-white transition-colors">Features</a>
-          <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
-          <a href="#demo" className="hover:text-white transition-colors">Demo</a>
-          <Link to="/login" className="hover:text-white transition-colors">Login</Link>
+        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-[var(--text-secondary)]">
+          <a href="#features" className="hover:text-[var(--text-primary)] transition-colors">Features</a>
+          <a href="#pricing" className="hover:text-[var(--text-primary)] transition-colors">Pricing</a>
+          <a href="#demo" className="hover:text-[var(--text-primary)] transition-colors">Demo</a>
+          <Link to="/login" className="hover:text-[var(--text-primary)] transition-colors">Login</Link>
         </div>
-        <Link to="/login" className="btn-orange py-2 px-5 text-sm">
-          Free mein shuru karo →
-        </Link>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={toggleTheme}
+            className="p-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)] hover:bg-[var(--border-color)] transition-all"
+          >
+            {theme === 'dark' ? <Sun className="w-5 h-5 text-orange-500" /> : <Moon className="w-5 h-5 text-orange-500" />}
+          </button>
+          <Link to="/login" className="btn-orange py-2 px-5 text-sm">
+            Free mein shuru karo →
+          </Link>
+        </div>
       </nav>
 
       {/* Hero Section */}
@@ -112,7 +122,7 @@ const LandingPage = () => {
             हिंदी में बोलो, <br />
             <span className="text-orange-500">Invoice बनाओ</span>
           </h1>
-          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10">
+          <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-2xl mx-auto mb-10">
             India's first Hindi AI-powered GST billing software. <br className="hidden md:block" />
             Just type: <span className="font-mono text-orange-400 bg-orange-500/10 px-2 py-1 rounded">'Rohit ko 3 shoes ₹2000 each GST 18% unpaid'</span>
           </p>
@@ -121,12 +131,12 @@ const LandingPage = () => {
             <Link to="/login" className="btn-orange w-full sm:w-auto flex items-center justify-center gap-2">
               अभी Try करो — Free <ArrowRight className="w-5 h-5" />
             </Link>
-            <button className="w-full sm:w-auto px-8 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all font-bold">
+            <button className="w-full sm:w-auto px-8 py-3 rounded-xl border border-[var(--border-color)] hover:bg-[var(--bg-secondary)] transition-all font-bold">
               Demo देखो
             </button>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-500">
+          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-[var(--text-secondary)]">
             <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-orange-500" /> GST Compliant</div>
             <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-orange-500" /> PDF Download</div>
             <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-orange-500" /> Hindi + Hinglish</div>
@@ -146,10 +156,10 @@ const LandingPage = () => {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className="glass p-8 rounded-3xl"
+              className="glass p-8 rounded-3xl border border-[var(--border-color)]"
             >
               <p className="text-4xl font-display font-bold text-orange-500 mb-2">{stat.value}</p>
-              <p className="text-sm text-gray-500 uppercase tracking-widest font-medium">{stat.label}</p>
+              <p className="text-sm text-[var(--text-secondary)] uppercase tracking-widest font-medium">{stat.label}</p>
             </motion.div>
           ))}
         </div>
@@ -159,7 +169,7 @@ const LandingPage = () => {
       <section id="features" className="py-24 px-6 max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">Powerful Features</h2>
-          <p className="text-gray-400">Everything you need to manage your business billing.</p>
+          <p className="text-[var(--text-secondary)]">Everything you need to manage your business billing.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -174,13 +184,13 @@ const LandingPage = () => {
             <motion.div
               key={i}
               whileHover={{ y: -5, borderColor: 'rgba(255, 92, 26, 0.3)' }}
-              className="glass p-8 rounded-3xl border border-white/5 transition-all group"
+              className="glass p-8 rounded-3xl border border-[var(--border-color)] transition-all group"
             >
               <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-orange-500/20 transition-colors">
                 <feature.icon className="w-6 h-6 text-orange-500" />
               </div>
               <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{feature.desc}</p>
+              <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{feature.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -190,19 +200,19 @@ const LandingPage = () => {
       <section id="pricing" className="py-24 px-6 max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">Simple Pricing</h2>
-          <p className="text-gray-400">Choose the plan that fits your business.</p>
+          <p className="text-[var(--text-secondary)]">Choose the plan that fits your business.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          <div className="glass p-10 rounded-[2.5rem] border border-white/5">
+          <div className="glass p-10 rounded-[2.5rem] border border-[var(--border-color)]">
             <h3 className="text-2xl font-bold mb-2">FREE</h3>
-            <p className="text-4xl font-display font-bold mb-6">₹0 <span className="text-lg text-gray-500 font-normal">/month</span></p>
-            <ul className="space-y-4 mb-10 text-gray-400">
+            <p className="text-4xl font-display font-bold mb-6">₹0 <span className="text-lg text-[var(--text-secondary)] font-normal">/month</span></p>
+            <ul className="space-y-4 mb-10 text-[var(--text-secondary)]">
               <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-orange-500" /> 20 invoices/month</li>
               <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-orange-500" /> Basic dashboard</li>
               <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-orange-500" /> PDF download</li>
             </ul>
-            <Link to="/login" className="block text-center py-4 rounded-2xl border border-white/10 hover:bg-white/5 font-bold transition-all">
+            <Link to="/login" className="block text-center py-4 rounded-2xl border border-[var(--border-color)] hover:bg-[var(--bg-secondary)] font-bold transition-all">
               Free mein Start karo
             </Link>
           </div>
@@ -210,8 +220,8 @@ const LandingPage = () => {
           <div className="glass p-10 rounded-[2.5rem] border-2 border-orange-500 relative overflow-hidden">
             <div className="absolute top-6 right-6 bg-orange-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">Most Popular 🔥</div>
             <h3 className="text-2xl font-bold mb-2">PRO</h3>
-            <p className="text-4xl font-display font-bold mb-6">₹499 <span className="text-lg text-gray-500 font-normal">/lifetime</span></p>
-            <ul className="space-y-4 mb-10 text-gray-400">
+            <p className="text-4xl font-display font-bold mb-6">₹499 <span className="text-lg text-[var(--text-secondary)] font-normal">/lifetime</span></p>
+            <ul className="space-y-4 mb-10 text-[var(--text-secondary)]">
               <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-orange-500" /> Unlimited invoices</li>
               <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-orange-500" /> GST reports + export</li>
               <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-orange-500" /> WhatsApp sharing</li>
@@ -225,19 +235,19 @@ const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-20 px-6 border-t border-white/5">
+      <footer className="py-20 px-6 border-t border-[var(--border-color)]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
           <div className="text-center md:text-left">
             <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
               <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center font-bold text-white">B</div>
               <span className="text-xl font-display font-bold tracking-tight">Bill<span className="text-orange-500">AI</span></span>
             </div>
-            <p className="text-sm text-gray-500">Made with 🧡 for Indian small businesses</p>
+            <p className="text-sm text-[var(--text-secondary)]">Made with 🧡 for Indian small businesses</p>
           </div>
-          <div className="flex gap-8 text-sm text-gray-500">
-            <a href="#" className="hover:text-white transition-colors">Privacy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms</a>
-            <a href="#" className="hover:text-white transition-colors">Contact</a>
+          <div className="flex gap-8 text-sm text-[var(--text-secondary)]">
+            <a href="#" className="hover:text-[var(--text-primary)] transition-colors">Privacy</a>
+            <a href="#" className="hover:text-[var(--text-primary)] transition-colors">Terms</a>
+            <a href="#" className="hover:text-[var(--text-primary)] transition-colors">Contact</a>
           </div>
         </div>
       </footer>

@@ -13,12 +13,15 @@ import {
   Search,
   Menu,
   X,
-  Shield
+  Shield,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useFirebase } from './FirebaseProvider';
 import { auth, signOut } from '../firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePricing } from './PricingContext';
+import { useTheme } from './ThemeContext';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -33,10 +36,10 @@ const SidebarItem = ({ to, icon: Icon, label, active }: { to: string, icon: any,
       "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
       active 
         ? "bg-orange-500/10 text-orange-500 border-l-4 border-orange-500" 
-        : "text-gray-400 hover:bg-white/5 hover:text-white"
+        : "text-gray-400 hover:bg-[var(--bg-primary)]/5 hover:text-[var(--text-primary)]"
     )}
   >
-    <Icon className={cn("w-5 h-5", active ? "text-orange-500" : "text-gray-400 group-hover:text-white")} />
+    <Icon className={cn("w-5 h-5", active ? "text-orange-500" : "text-gray-400 group-hover:text-[var(--text-primary)]")} />
     <span className="font-medium">{label}</span>
   </Link>
 );
@@ -44,6 +47,7 @@ const SidebarItem = ({ to, icon: Icon, label, active }: { to: string, icon: any,
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { profile } = useFirebase();
   const { openPricing } = usePricing();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [isProfileOpen, setIsProfileOpen] = React.useState(false);
@@ -78,9 +82,9 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
   }
 
   return (
-    <div className="min-h-screen bg-[#060810] text-white flex">
+    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] flex transition-colors duration-300">
       {/* Sidebar Desktop */}
-      <aside className="hidden lg:flex flex-col w-64 border-r border-white/5 bg-[#0C1020] p-6">
+      <aside className="hidden lg:flex flex-col w-64 border-r border-[var(--border-color)] bg-[var(--bg-secondary)] p-6">
         <div className="flex items-center gap-2 mb-10 px-2">
           <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center font-bold text-white">B</div>
           <span className="text-xl font-bold tracking-tight">Bill<span className="text-orange-500">AI</span></span>
@@ -96,7 +100,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
           ))}
         </nav>
 
-        <div className="mt-auto pt-6 border-t border-white/5">
+        <div className="mt-auto pt-6 border-t border-[var(--border-color)]">
           {profile?.plan === 'free' && !isSuperAdmin && (
             <div className="bg-gradient-to-br from-orange-500/20 to-orange-600/5 p-4 rounded-2xl border border-orange-500/20 mb-6">
               <p className="text-sm font-semibold text-orange-500 mb-1">Upgrade to PRO</p>
@@ -127,7 +131,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              className="fixed top-0 left-0 bottom-0 w-72 bg-[#0C1020] z-50 p-6 lg:hidden"
+              className="fixed top-0 left-0 bottom-0 w-72 bg-[var(--bg-secondary)] z-50 p-6 lg:hidden"
             >
               <div className="flex items-center justify-between mb-10">
                 <div className="flex items-center gap-2">
@@ -135,7 +139,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
                   <span className="text-xl font-bold tracking-tight">Bill<span className="text-orange-500">AI</span></span>
                 </div>
                 <button onClick={() => setIsSidebarOpen(false)}>
-                  <X className="w-6 h-6 text-gray-400" />
+                  <X className="w-6 h-6 text-[var(--text-secondary)]" />
                 </button>
               </div>
               <nav className="space-y-2">
@@ -154,34 +158,44 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-bottom border-white/5 bg-[#060810]/80 backdrop-blur-md sticky top-0 z-30 px-4 lg:px-8 flex items-center justify-between">
+        <header className="h-16 border-b border-[var(--border-color)] bg-[var(--bg-primary)]/80 backdrop-blur-md sticky top-0 z-30 px-4 lg:px-8 flex items-center justify-between transition-colors duration-300">
           <div className="flex items-center gap-4">
             <button className="lg:hidden" onClick={() => setIsSidebarOpen(true)}>
-              <Menu className="w-6 h-6 text-gray-400" />
+              <Menu className="w-6 h-6 text-[var(--text-secondary)]" />
             </button>
             <div>
               <h1 className="text-lg font-bold capitalize">{location.pathname.split('/')[1] || 'Dashboard'}</h1>
-              <p className="text-xs text-gray-500 hidden sm:block">Welcome back, {profile?.displayName}</p>
+              <p className="text-xs text-[var(--text-secondary)] hidden sm:block">Welcome back, {profile?.displayName}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3 sm:gap-6">
             <div className="relative hidden md:block">
-              <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-[var(--text-secondary)] absolute left-3 top-1/2 -translate-y-1/2" />
               <input 
                 type="text" 
                 placeholder="Search..." 
-                className="bg-white/5 border border-white/10 rounded-full py-1.5 pl-10 pr-4 text-sm focus:outline-none focus:border-orange-500/50 w-64"
+                className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-full py-1.5 pl-10 pr-4 text-sm focus:outline-none focus:border-orange-500/50 w-64 text-[var(--text-primary)]"
               />
             </div>
-            <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
+
+            {/* Theme Toggle */}
+            <button 
+              onClick={toggleTheme}
+              className="p-2 text-[var(--text-secondary)] hover:text-orange-500 transition-colors rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)]"
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            >
+              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+
+            <button className="relative p-2 text-[var(--text-secondary)] hover:text-orange-500 transition-colors">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-orange-500 rounded-full border-2 border-[#060810]"></span>
+              <span className="absolute top-2 right-2 w-2 h-2 bg-orange-500 rounded-full border-2 border-[var(--bg-primary)]"></span>
             </button>
             <div className="relative" ref={dropdownRef}>
               <button 
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-3 hover:bg-white/5 p-1 rounded-full transition-colors"
+                className="flex items-center gap-3 hover:bg-[var(--bg-secondary)] p-1 rounded-full transition-colors"
               >
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-medium">{profile?.displayName}</p>
@@ -198,17 +212,17 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-2 w-56 bg-[#0C1020] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+                    className="absolute right-0 mt-2 w-56 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl shadow-2xl overflow-hidden z-50"
                   >
-                    <div className="p-4 border-b border-white/5">
+                    <div className="p-4 border-b border-[var(--border-color)]">
                       <p className="text-sm font-bold truncate">{profile?.displayName}</p>
-                      <p className="text-xs text-gray-500 truncate">{profile?.email}</p>
+                      <p className="text-xs text-[var(--text-secondary)] truncate">{profile?.email}</p>
                     </div>
                     <div className="p-2">
                       <Link 
                         to="/settings" 
                         onClick={() => setIsProfileOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                        className="flex items-center gap-3 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)]/5 rounded-lg transition-all"
                       >
                         <Settings className="w-4 h-4" />
                         <span>Settings</span>

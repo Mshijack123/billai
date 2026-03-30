@@ -289,12 +289,12 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-4xl bg-[#0C1020] border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="relative w-full max-w-4xl bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
-        <div className="p-6 border-b border-white/5 flex items-center justify-between flex-shrink-0">
+        <div className="p-6 border-b border-[var(--border-color)] flex items-center justify-between flex-shrink-0">
           <h2 className="text-2xl font-bold">Manual Invoice Banao</h2>
-          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-lg">
-            <X className="w-6 h-6 text-gray-500" />
+          <button onClick={onClose} className="p-2 hover:bg-[var(--bg-secondary)] rounded-lg">
+            <X className="w-6 h-6 text-[var(--text-secondary)]" />
           </button>
         </div>
 
@@ -303,9 +303,9 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Customer Select Karo *</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Customer Select Karo *</label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <User className="w-4 h-4 text-[var(--text-secondary)] absolute left-3 top-1/2 -translate-y-1/2" />
                   <select 
                     value={selectedCustomerId}
                     onChange={(e) => {
@@ -327,9 +327,9 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
               </div>
 
               {!selectedCustomerId && (
-                <div className="space-y-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+                <div className="space-y-4 p-4 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)]">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">New Customer Name *</label>
+                    <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">New Customer Name *</label>
                     <input 
                       type="text"
                       value={newCustomerName}
@@ -340,7 +340,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Phone Number</label>
+                      <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Phone Number</label>
                       <input 
                         type="text"
                         value={newCustomerPhone}
@@ -350,7 +350,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">State</label>
+                      <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">State</label>
                       <select 
                         value={customerState}
                         onChange={(e) => setCustomerState(e.target.value)}
@@ -361,7 +361,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Address</label>
+                    <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Address</label>
                     <input 
                       type="text"
                       value={newCustomerAddress}
@@ -374,12 +374,12 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
               )}
 
               {selectedCustomerId && (
-                <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-2">
+                <div className="p-4 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] space-y-2">
                   <p className="text-sm font-bold">{customers.find(c => c.id === selectedCustomerId)?.name}</p>
-                  <p className="text-xs text-gray-500">{customers.find(c => c.id === selectedCustomerId)?.phone}</p>
-                  <p className="text-xs text-gray-500">{customers.find(c => c.id === selectedCustomerId)?.address}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">{customers.find(c => c.id === selectedCustomerId)?.phone}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">{customers.find(c => c.id === selectedCustomerId)?.address}</p>
                   <div className="pt-2">
-                    <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Customer State</label>
+                    <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Customer State</label>
                     <select 
                       value={customerState}
                       onChange={(e) => setCustomerState(e.target.value)}
@@ -394,7 +394,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Invoice Date</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Invoice Date</label>
                 <input 
                   type="date" 
                   value={invoiceDate}
@@ -403,7 +403,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Due Date</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Due Date</label>
                 <input 
                   type="date" 
                   value={dueDate}
@@ -417,7 +417,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
           {/* Items Table */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest">Invoice Items</h3>
+              <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-widest">Invoice Items</h3>
               <button 
                 onClick={handleAddItem}
                 className="text-xs font-bold text-orange-500 hover:text-orange-400 flex items-center gap-1"
@@ -428,13 +428,13 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
             
             <div className="space-y-3">
               {items.map((item, index) => (
-                <div key={index} className="glass p-4 rounded-2xl border border-white/5 grid grid-cols-12 gap-3 sm:gap-4 items-end">
+                <div key={index} className="glass p-4 rounded-2xl border border-[var(--border-color)] grid grid-cols-12 gap-3 sm:gap-4 items-end">
                   <div className="col-span-12 lg:col-span-4 space-y-1">
-                    <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Description / Product</label>
+                    <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Description / Product</label>
                     <div className="flex gap-2">
                       <select 
                         onChange={(e) => handleProductSelect(index, e.target.value)}
-                        className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs focus:outline-none w-20"
+                        className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg px-2 py-1 text-xs focus:outline-none w-20"
                       >
                         <option value="">Pick</option>
                         {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -444,34 +444,34 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                         value={item.description}
                         onChange={(e) => handleItemChange(index, 'description', e.target.value)}
                         placeholder="Item name..." 
-                        className="bg-transparent border-b border-white/10 focus:border-orange-500 outline-none text-sm flex-1 py-1"
+                        className="bg-transparent border-b border-[var(--border-color)] focus:border-orange-500 outline-none text-sm flex-1 py-1"
                       />
                     </div>
                   </div>
                   <div className="col-span-4 lg:col-span-1 space-y-1">
-                    <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Qty</label>
+                    <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Qty</label>
                     <input 
                       type="number" 
                       value={item.qty}
                       onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
-                      className="bg-transparent border-b border-white/10 focus:border-orange-500 outline-none text-sm w-full py-1"
+                      className="bg-transparent border-b border-[var(--border-color)] focus:border-orange-500 outline-none text-sm w-full py-1"
                     />
                   </div>
                   <div className="col-span-8 lg:col-span-2 space-y-1">
-                    <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Rate (₹)</label>
+                    <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Rate (₹)</label>
                     <input 
                       type="number" 
                       value={item.rate}
                       onChange={(e) => handleItemChange(index, 'rate', e.target.value)}
-                      className="bg-transparent border-b border-white/10 focus:border-orange-500 outline-none text-sm w-full py-1"
+                      className="bg-transparent border-b border-[var(--border-color)] focus:border-orange-500 outline-none text-sm w-full py-1"
                     />
                   </div>
                   <div className="col-span-6 lg:col-span-2 space-y-1">
-                    <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">GST %</label>
+                    <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">GST %</label>
                     <select 
                       value={item.gstRate}
                       onChange={(e) => handleItemChange(index, 'gstRate', e.target.value)}
-                      className="bg-transparent border-b border-white/10 focus:border-orange-500 outline-none text-sm w-full py-1"
+                      className="bg-transparent border-b border-[var(--border-color)] focus:border-orange-500 outline-none text-sm w-full py-1"
                     >
                       <option value={0}>0%</option>
                       <option value={5}>5%</option>
@@ -481,13 +481,13 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                     </select>
                   </div>
                   <div className="col-span-6 lg:col-span-2 space-y-1">
-                    <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Total</label>
+                    <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Total</label>
                     <p className="text-sm font-bold font-mono py-1">₹{item.total.toLocaleString()}</p>
                   </div>
                   <div className="col-span-12 lg:col-span-1 flex justify-end">
                     <button 
                       onClick={() => handleRemoveItem(index)}
-                      className="p-2 hover:bg-red-500/10 text-gray-500 hover:text-red-500 rounded-lg transition-colors"
+                      className="p-2 hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-500 rounded-lg transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -500,7 +500,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
           {/* Bottom Summary */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Payment Status</label>
+                <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Payment Status</label>
                 <div className="flex gap-2">
                   {['paid', 'pending', 'partial'].map(s => (
                     <button
@@ -509,7 +509,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                       onClick={() => setStatus(s as any)}
                       className={cn(
                         "flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-widest border transition-all",
-                        status === s ? "bg-orange-500 border-orange-500 text-white" : "border-white/10 text-gray-500 hover:bg-white/5"
+                        status === s ? "bg-orange-500 border-orange-500 text-white" : "border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"
                       )}
                     >
                       {s}
@@ -519,7 +519,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
               </div>
               {status === 'partial' && (
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Paid Amount (₹)</label>
+                  <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Paid Amount (₹)</label>
                   <input 
                     type="number" 
                     value={paidAmount}
@@ -527,39 +527,39 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                     max={totals.total}
                     className="input-dark w-full" 
                   />
-                  <p className="text-[10px] text-gray-500">Balance: ₹{(totals.total - paidAmount).toLocaleString()}</p>
+                  <p className="text-[10px] text-[var(--text-secondary)]">Balance: ₹{(totals.total - paidAmount).toLocaleString()}</p>
                 </div>
               )}
             </div>
             
-            <div className="glass p-6 rounded-3xl border border-white/5 space-y-3">
-              <div className="flex justify-between text-sm text-gray-400">
+            <div className="glass p-6 rounded-3xl border border-[var(--border-color)] space-y-3">
+              <div className="flex justify-between text-sm text-[var(--text-secondary)]">
                 <span>Subtotal</span>
                 <span className="font-mono">₹{totals.subtotal.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-400">
+              <div className="flex justify-between text-sm text-[var(--text-secondary)]">
                 <span>Total GST</span>
                 <span className="font-mono">₹{totals.gst.toLocaleString()}</span>
               </div>
               {calculateGSTType(profile?.state || 'Rajasthan', customerState) === 'CGST_SGST' ? (
-                <div className="flex gap-4 text-[10px] font-bold text-gray-500 justify-end">
+                <div className="flex gap-4 text-[10px] font-bold text-[var(--text-secondary)] justify-end">
                   <span>CGST: ₹{(totals.gst / 2).toLocaleString()}</span>
                   <span>SGST: ₹{(totals.gst / 2).toLocaleString()}</span>
                 </div>
               ) : (
-                <div className="flex gap-4 text-[10px] font-bold text-gray-500 justify-end">
+                <div className="flex gap-4 text-[10px] font-bold text-[var(--text-secondary)] justify-end">
                   <span>IGST: ₹{totals.gst.toLocaleString()}</span>
                 </div>
               )}
-              <div className="flex justify-between text-xl font-bold pt-3 border-t border-white/5">
+              <div className="flex justify-between text-xl font-bold pt-3 border-t border-[var(--border-color)]">
                 <span>Total Amount</span>
                 <span className="text-orange-500 font-mono">₹{totals.total.toLocaleString()}</span>
               </div>
             </div>
           </div>
 
-        <div className="p-6 border-t border-white/5 flex gap-4 flex-shrink-0">
-          <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-white/10 hover:bg-white/5 font-bold transition-all">
+        <div className="p-6 border-t border-[var(--border-color)] flex gap-4 flex-shrink-0">
+          <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-[var(--border-color)] hover:bg-[var(--bg-secondary)] font-bold transition-all">
             Cancel
           </button>
           <button 

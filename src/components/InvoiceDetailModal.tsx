@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Download, Share2, Edit3, Printer, Loader2, CreditCard, History, Plus, Calendar as CalendarIcon, IndianRupee, Layout } from 'lucide-react';
+import { X, Download, Share2, Edit3, Printer, Loader2, CreditCard, History, Plus, Calendar as CalendarIcon, IndianRupee, Layout, Trash2 } from 'lucide-react';
 import { Invoice, UserProfile, Payment } from '../types';
 import { numberToWords } from '../lib/utils';
 import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
-import { db, doc, updateDoc } from '../firebase';
+import { db, doc, updateDoc, deleteDoc } from '../firebase';
 
 interface InvoiceDetailModalProps {
   isOpen: boolean;
@@ -14,6 +14,7 @@ interface InvoiceDetailModalProps {
   profile: UserProfile | null;
   autoDownload?: boolean;
   onDownloadComplete?: () => void;
+  onDelete?: (id: string) => void;
 }
 
 export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({ 
@@ -22,7 +23,8 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
   invoice, 
   profile,
   autoDownload,
-  onDownloadComplete
+  onDownloadComplete,
+  onDelete
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isRecordingPayment, setIsRecordingPayment] = useState(false);
@@ -113,6 +115,20 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDelete = async () => {
+    if (!invoice) return;
+    if (window.confirm('Are you sure you want to delete this invoice?')) {
+      try {
+        await deleteDoc(doc(db, 'invoices', invoice.id));
+        if (onDelete) onDelete(invoice.id);
+        onClose();
+      } catch (error) {
+        console.error('Error deleting invoice:', error);
+        alert('Failed to delete invoice. Please try again.');
+      }
+    }
   };
 
   const handleDownload = async () => {
@@ -244,10 +260,10 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-4xl bg-[#0C1020] border border-white/10 sm:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col h-full sm:h-auto sm:max-h-[90vh]"
+        className="relative w-full max-w-4xl bg-[var(--bg-primary)] border border-[var(--border-color)] sm:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col h-full sm:h-auto sm:max-h-[90vh]"
       >
         {/* Header */}
-        <div className="p-3 sm:p-6 border-b border-white/5 flex flex-wrap items-center justify-between bg-[#0C1020] sticky top-0 z-10 gap-2">
+        <div className="p-3 sm:p-6 border-b border-[var(--border-color)] flex flex-wrap items-center justify-between bg-[var(--bg-primary)] sticky top-0 z-10 gap-2">
           <div className="flex items-center gap-2 sm:gap-4">
             <h2 className="text-sm sm:text-xl font-bold truncate max-w-[100px] sm:max-w-none">{invoice.invoiceNumber}</h2>
             <span className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-bold uppercase tracking-widest ${
@@ -257,9 +273,9 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
             </span>
           </div>
           <div className="flex items-center gap-1 sm:gap-4">
-            <div className="flex items-center gap-2 bg-white/5 px-2 sm:px-3 py-1.5 rounded-xl border border-white/10">
-              <span className="hidden sm:inline text-[10px] font-bold uppercase text-gray-500">Template</span>
-              <Layout className="w-3 h-3 sm:hidden text-gray-500" />
+            <div className="flex items-center gap-2 bg-[var(--bg-secondary)] px-2 sm:px-3 py-1.5 rounded-xl border border-[var(--border-color)]">
+              <span className="hidden sm:inline text-[10px] font-bold uppercase text-[var(--text-secondary)]">Template</span>
+              <Layout className="w-3 h-3 sm:hidden text-[var(--text-secondary)]" />
               <select 
                 value={currentTemplate}
                 onChange={(e) => setCurrentTemplate(e.target.value as any)}
@@ -271,8 +287,8 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
                 <option value="modern">Modern</option>
               </select>
             </div>
-            <div className="flex items-center gap-2 bg-white/5 px-2 sm:px-3 py-1.5 rounded-xl border border-white/10">
-              <span className="hidden sm:inline text-[10px] font-bold uppercase text-gray-500">Zoom</span>
+            <div className="flex items-center gap-2 bg-[var(--bg-secondary)] px-2 sm:px-3 py-1.5 rounded-xl border border-[var(--border-color)]">
+              <span className="hidden sm:inline text-[10px] font-bold uppercase text-[var(--text-secondary)]">Zoom</span>
               <input 
                 type="range" 
                 min="0.1" 
@@ -280,36 +296,43 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
                 step="0.05" 
                 value={zoom} 
                 onChange={(e) => setZoom(parseFloat(e.target.value))}
-                className="w-12 sm:w-24 h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                className="w-12 sm:w-24 h-1.5 bg-[var(--bg-secondary)] rounded-lg appearance-none cursor-pointer accent-orange-500"
               />
               <span className="text-[10px] font-bold text-orange-500 w-8">{Math.round(zoom * 100)}%</span>
             </div>
-            <button onClick={handlePrint} className="hidden sm:inline-flex p-1.5 sm:p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-400 hover:text-white">
+            <button onClick={handlePrint} className="hidden sm:inline-flex p-1.5 sm:p-2 hover:bg-[var(--bg-secondary)] rounded-lg transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
               <Printer className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
             <button 
               onClick={handleDownload} 
               disabled={isDownloading}
-              className="p-1.5 sm:p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-400 hover:text-white disabled:opacity-50"
+              className="p-1.5 sm:p-2 hover:bg-[var(--bg-secondary)] rounded-lg transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50"
             >
               {isDownloading ? <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" /> : <Download className="w-4 h-4 sm:w-5 sm:h-5" />}
             </button>
             <button 
               onClick={handleWhatsAppShare}
-              className="p-1.5 sm:p-2 hover:bg-white/5 rounded-lg transition-colors text-green-500 hover:bg-green-500/10"
+              className="p-1.5 sm:p-2 hover:bg-[var(--bg-secondary)] rounded-lg transition-colors text-green-500 hover:bg-green-500/10"
               title="Share on WhatsApp"
             >
               <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
-            <div className="w-px h-4 sm:h-6 bg-white/10 mx-1 sm:mx-2" />
-            <button onClick={onClose} className="p-1.5 sm:p-2 hover:bg-white/5 rounded-lg transition-colors">
-              <X className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500" />
+            <button 
+              onClick={handleDelete}
+              className="p-1.5 sm:p-2 hover:bg-red-500/10 rounded-lg transition-colors text-red-500"
+              title="Delete Invoice"
+            >
+              <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+            <div className="w-px h-4 sm:h-6 bg-[var(--border-color)] mx-1 sm:mx-2" />
+            <button onClick={onClose} className="p-1.5 sm:p-2 hover:bg-[var(--bg-secondary)] rounded-lg transition-colors">
+              <X className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--text-secondary)]" />
             </button>
           </div>
         </div>
 
         {/* Invoice Paper */}
-        <div className="flex-1 overflow-auto p-3 sm:p-8 bg-[#060810]/50 flex flex-col lg:flex-row gap-8 items-start justify-start lg:justify-center">
+        <div className="flex-1 overflow-auto p-3 sm:p-8 bg-[var(--bg-primary)]/50 flex flex-col lg:flex-row gap-8 items-start justify-start lg:justify-center">
           <div 
             className="relative flex-shrink-0 mx-auto lg:mx-0"
             style={{ 

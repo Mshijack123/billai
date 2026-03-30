@@ -36,7 +36,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-lg bg-[#0C1020] border border-orange-500/30 rounded-[2.5rem] shadow-2xl overflow-hidden"
+        className="relative w-full max-w-lg bg-[var(--bg-primary)] border border-orange-500/30 rounded-[2.5rem] shadow-2xl overflow-hidden"
       >
         <div className="p-8 text-center space-y-6">
           <div className="w-20 h-20 bg-orange-500/10 rounded-3xl flex items-center justify-center mx-auto mb-4">
@@ -45,10 +45,10 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
           
           <div>
             <h2 className="text-3xl font-bold mb-2">Upgrade to PRO</h2>
-            <p className="text-gray-400">Unlock unlimited possibilities with BillAI PRO</p>
+            <p className="text-[var(--text-secondary)]">Unlock unlimited possibilities with BillAI PRO</p>
           </div>
 
-          <div className="bg-white/5 rounded-3xl p-6 text-left space-y-4 border border-white/5">
+          <div className="bg-[var(--bg-secondary)] rounded-3xl p-6 text-left space-y-4 border border-[var(--border-color)]">
             <div className="flex items-center gap-3">
               <div className="w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center">
                 <Check className="w-4 h-4 text-green-500" />
@@ -76,8 +76,8 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
           </div>
 
           <div className="pt-4">
-            <div className="text-4xl font-bold mb-1">₹499<span className="text-lg text-gray-500 font-normal">/lifetime</span></div>
-            <p className="text-xs text-gray-500 mb-6">Contact admin for manual payment & activation</p>
+            <div className="text-4xl font-bold mb-1">₹499<span className="text-lg text-[var(--text-secondary)] font-normal">/lifetime</span></div>
+            <p className="text-xs text-[var(--text-secondary)] mb-6">Contact admin for manual payment & activation</p>
             
             <button 
               onClick={handleUpgrade}
@@ -90,7 +90,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
 
           <button 
             onClick={onClose}
-            className="text-sm text-gray-500 hover:text-white transition-colors"
+            className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
           >
             Maybe later
           </button>
@@ -98,9 +98,9 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
 
         <button 
           onClick={onClose}
-          className="absolute top-6 right-6 p-2 hover:bg-white/5 rounded-full transition-colors"
+          className="absolute top-6 right-6 p-2 hover:bg-[var(--bg-secondary)] rounded-full transition-colors"
         >
-          <X className="w-6 h-6 text-gray-500" />
+          <X className="w-6 h-6 text-[var(--text-secondary)]" />
         </button>
       </motion.div>
     </div>

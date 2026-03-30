@@ -15,12 +15,13 @@ import {
   Check,
   X,
   Share2,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from 'lucide-react';
 import { useFirebase } from '../components/FirebaseProvider';
 import { usePricing } from '../components/PricingContext';
 import { useInvoiceLimit } from '../hooks/useInvoiceLimit';
-import { db, collection, query, where, onSnapshot, updateDoc, doc, handleFirestoreError, OperationType } from '../firebase';
+import { db, collection, query, where, onSnapshot, updateDoc, deleteDoc, doc, handleFirestoreError, OperationType } from '../firebase';
 import { Invoice } from '../types';
 import { AIInvoiceModal } from '../components/AIInvoiceModal';
 import { ManualInvoiceModal } from '../components/ManualInvoiceModal';
@@ -118,6 +119,21 @@ const InvoicesPage = () => {
     }
   };
 
+  const handleDeleteInvoice = async (id?: string) => {
+    const idsToDelete = id ? [id] : selectedInvoices;
+    if (idsToDelete.length === 0) return;
+
+    if (!window.confirm(`Kya aap ${idsToDelete.length > 1 ? 'in selected invoices' : 'is invoice'} ko delete karna chahte hain?`)) return;
+
+    try {
+      const promises = idsToDelete.map(invoiceId => deleteDoc(doc(db, 'invoices', invoiceId)));
+      await Promise.all(promises);
+      setSelectedInvoices([]);
+    } catch (err) {
+      console.error('Error deleting invoice:', err);
+    }
+  };
+
   const handleCSVExport = () => {
     const dataToExport = filteredInvoices.map(inv => ({
       'Invoice Number': inv.invoiceNumber,
@@ -211,9 +227,9 @@ const InvoicesPage = () => {
 
       {/* Top Bar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        <div className="flex-1 flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-[var(--text-secondary)] absolute left-4 top-1/2 -translate-y-1/2" />
             <input 
               type="text" 
               placeholder="Invoice ya customer dhundo..." 
@@ -224,7 +240,7 @@ const InvoicesPage = () => {
           </div>
           <div className="flex gap-4">
             <div className="relative">
-              <Filter className="w-4 h-4 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2" />
+              <Filter className="w-4 h-4 text-[var(--text-secondary)] absolute left-4 top-1/2 -translate-y-1/2" />
               <select 
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -240,7 +256,7 @@ const InvoicesPage = () => {
               onClick={handleCSVExport}
               className="input-dark flex items-center gap-2 hover:bg-white/10 transition-colors"
             >
-              <Download className="w-4 h-4 text-gray-500" />
+              <Download className="w-4 h-4 text-[var(--text-secondary)]" />
               <span className="text-sm font-medium">CSV Export</span>
             </button>
           </div>
@@ -268,61 +284,61 @@ const InvoicesPage = () => {
       </div>
 
       {/* Summary Strip */}
-      <div className="glass rounded-2xl border border-white/5 p-6 flex flex-wrap items-center justify-between gap-8">
+      <div className="glass rounded-2xl border border-[var(--border-color)] p-6 flex flex-wrap items-center justify-between gap-8">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
-            <FileText className="w-5 h-5 text-gray-400" />
+          <div className="w-10 h-10 bg-[var(--bg-primary)]/5 rounded-xl flex items-center justify-center">
+            <FileText className="w-5 h-5 text-[var(--text-secondary)]" />
           </div>
           <div>
-            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Total</p>
+            <p className="text-xs text-[var(--text-secondary)] font-bold uppercase tracking-widest">Total</p>
             <p className="text-xl font-bold">{stats.total}</p>
           </div>
         </div>
-        <div className="h-10 w-px bg-white/5 hidden md:block" />
+        <div className="h-10 w-px bg-[var(--border-color)] hidden md:block" />
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center">
             <div className="w-2 h-2 bg-green-500 rounded-full" />
           </div>
           <div>
-            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Paid</p>
+            <p className="text-xs text-[var(--text-secondary)] font-bold uppercase tracking-widest">Paid</p>
             <p className="text-xl font-bold">₹{stats.paidAmount.toLocaleString()}</p>
           </div>
         </div>
-        <div className="h-10 w-px bg-white/5 hidden md:block" />
+        <div className="h-10 w-px bg-[var(--border-color)] hidden md:block" />
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center">
             <div className="w-2 h-2 bg-amber-500 rounded-full" />
           </div>
           <div>
-            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Balance</p>
+            <p className="text-xs text-[var(--text-secondary)] font-bold uppercase tracking-widest">Balance</p>
             <p className="text-xl font-bold text-amber-500">₹{stats.pendingAmount.toLocaleString()}</p>
           </div>
         </div>
-        <div className="h-10 w-px bg-white/5 hidden md:block" />
+        <div className="h-10 w-px bg-[var(--border-color)] hidden md:block" />
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
             <div className="w-2 h-2 bg-blue-500 rounded-full" />
           </div>
           <div>
-            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Invoices</p>
+            <p className="text-xs text-[var(--text-secondary)] font-bold uppercase tracking-widest">Invoices</p>
             <p className="text-xl font-bold">{stats.total}</p>
           </div>
         </div>
       </div>
 
       {/* Invoices Table / Card View */}
-      <div className="glass rounded-[2rem] lg:rounded-[2.5rem] border border-white/5 overflow-hidden relative">
+      <div className="glass rounded-[2rem] lg:rounded-[2.5rem] border border-[var(--border-color)] overflow-hidden relative">
         {/* Desktop Table View */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="text-[10px] text-gray-500 uppercase tracking-widest border-b border-white/5">
+              <tr className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest border-b border-[var(--border-color)]">
                 <th className="px-8 py-4">
                   <input 
                     type="checkbox" 
                     checked={selectedInvoices.length === filteredInvoices.length && filteredInvoices.length > 0}
                     onChange={toggleSelectAll}
-                    className="w-4 h-4 rounded border-white/10 bg-white/5 text-orange-500 focus:ring-orange-500" 
+                    className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-primary)] text-orange-500 focus:ring-orange-500" 
                   />
                 </th>
                 <th className="px-8 py-4 font-bold">Invoice #</th>
@@ -335,30 +351,30 @@ const InvoicesPage = () => {
                 <th className="px-8 py-4 font-bold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-[var(--border-color)]">
               {filteredInvoices.map((inv) => (
-                <tr key={inv.id} className="hover:bg-white/5 transition-colors group">
+                <tr key={inv.id} className="hover:bg-[var(--bg-secondary)] transition-colors group">
                   <td className="px-8 py-4">
                     <input 
                       type="checkbox" 
                       checked={selectedInvoices.includes(inv.id)}
                       onChange={() => toggleSelect(inv.id)}
-                      className="w-4 h-4 rounded border-white/10 bg-white/5 text-orange-500 focus:ring-orange-500" 
+                      className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-primary)] text-orange-500 focus:ring-orange-500" 
                     />
                   </td>
                   <td className="px-8 py-4 font-mono text-sm">{inv.invoiceNumber}</td>
                   <td className="px-8 py-4">
                     <p className="text-sm font-bold">{inv.customerName}</p>
                   </td>
-                  <td className="px-8 py-4 text-xs text-gray-500">{new Date(inv.date).toLocaleDateString()}</td>
-                  <td className="px-8 py-4 text-xs text-gray-500">{inv.items.length} items</td>
+                  <td className="px-8 py-4 text-xs text-[var(--text-secondary)]">{new Date(inv.date).toLocaleDateString()}</td>
+                  <td className="px-8 py-4 text-xs text-[var(--text-secondary)]">{inv.items.length} items</td>
                   <td className="px-8 py-4">
                     <p className="text-sm font-bold">₹{inv.total.toLocaleString()}</p>
                     {inv.status === 'partial' && (
                       <p className="text-[10px] text-orange-500 font-bold">Bal: ₹{(inv.balanceAmount ?? 0).toLocaleString()}</p>
                     )}
                   </td>
-                  <td className="px-8 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">{inv.gstType}</td>
+                  <td className="px-8 py-4 text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">{inv.gstType}</td>
                   <td className="px-8 py-4">
                     <span className={cn(
                       "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
@@ -373,14 +389,14 @@ const InvoicesPage = () => {
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => setSelectedInvoice(inv)}
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors" 
+                        className="p-2 hover:bg-[var(--bg-primary)] rounded-lg transition-colors" 
                         title="View"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => handleWhatsAppShare(inv)}
-                        className="p-2 hover:bg-green-500/10 rounded-lg text-gray-400 hover:text-green-500 transition-colors" 
+                        className="p-2 hover:bg-green-500/10 rounded-lg text-[var(--text-secondary)] hover:text-green-500 transition-colors" 
                         title="WhatsApp Share"
                       >
                         <Share2 className="w-4 h-4" />
@@ -390,7 +406,7 @@ const InvoicesPage = () => {
                           setSelectedInvoice(inv);
                           setAutoDownload(true);
                         }}
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors" 
+                        className="p-2 hover:bg-[var(--bg-primary)] rounded-lg transition-colors" 
                         title="Download PDF"
                       >
                         <Download className="w-4 h-4" />
@@ -398,13 +414,20 @@ const InvoicesPage = () => {
                       {inv.status !== 'paid' && (
                         <button 
                           onClick={() => handleMarkAsPaid(inv.id)}
-                          className="p-2 hover:bg-green-500/10 rounded-lg text-gray-400 hover:text-green-500 transition-colors" 
+                          className="p-2 hover:bg-green-500/10 rounded-lg text-[var(--text-secondary)] hover:text-green-500 transition-colors" 
                           title="Mark as Paid"
                         >
                           <Check className="w-4 h-4" />
                         </button>
                       )}
-                      <button className="p-2 hover:bg-white/10 rounded-lg transition-colors"><MoreVertical className="w-4 h-4" /></button>
+                      <button 
+                        onClick={() => handleDeleteInvoice(inv.id)}
+                        className="p-2 hover:bg-red-500/10 rounded-lg text-[var(--text-secondary)] hover:text-red-500 transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      <button className="p-2 hover:bg-[var(--bg-primary)] rounded-lg transition-colors"><MoreVertical className="w-4 h-4" /></button>
                     </div>
                   </td>
                 </tr>
@@ -414,14 +437,14 @@ const InvoicesPage = () => {
         </div>
 
         {/* Mobile Card View */}
-        <div className="md:hidden divide-y divide-white/5">
+        <div className="md:hidden divide-y divide-[var(--border-color)]">
           {filteredInvoices.map((inv) => (
-            <div key={inv.id} className="p-6 space-y-4 active:bg-white/5 transition-colors">
+            <div key={inv.id} className="p-6 space-y-4 active:bg-[var(--bg-secondary)] transition-colors">
               <div className="flex justify-between items-start">
                 <div onClick={() => setSelectedInvoice(inv)}>
-                  <p className="text-xs font-mono text-gray-500 mb-1">{inv.invoiceNumber}</p>
+                  <p className="text-xs font-mono text-[var(--text-secondary)] mb-1">{inv.invoiceNumber}</p>
                   <h4 className="font-bold text-lg">{inv.customerName}</h4>
-                  <p className="text-xs text-gray-500">{new Date(inv.date).toLocaleDateString()}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">{new Date(inv.date).toLocaleDateString()}</p>
                 </div>
                 <span className={cn(
                   "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
@@ -435,7 +458,7 @@ const InvoicesPage = () => {
               
               <div className="flex justify-between items-end">
                 <div>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Total Amount</p>
+                  <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold">Total Amount</p>
                   <p className="text-xl font-bold font-mono text-orange-500">₹{inv.total.toLocaleString()}</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -447,7 +470,7 @@ const InvoicesPage = () => {
                   </button>
                   <button 
                     onClick={() => setSelectedInvoice(inv)}
-                    className="p-3 bg-white/5 text-gray-400 rounded-xl"
+                    className="p-3 bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded-xl"
                   >
                     <Eye className="w-5 h-5" />
                   </button>
@@ -459,6 +482,12 @@ const InvoicesPage = () => {
                       <Check className="w-5 h-5" />
                     </button>
                   )}
+                  <button 
+                    onClick={() => handleDeleteInvoice(inv.id)}
+                    className="p-3 bg-red-500/10 text-red-500 rounded-xl"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -466,21 +495,21 @@ const InvoicesPage = () => {
         </div>
 
         {filteredInvoices.length === 0 && (
-          <div className="px-8 py-20 text-center text-gray-500">
+          <div className="px-8 py-20 text-center text-[var(--text-secondary)]">
             <FileText className="w-12 h-12 mx-auto mb-4 opacity-20" />
             <p>Koi invoice nahi mila.</p>
           </div>
         )}
 
         {/* Pagination */}
-        <div className="p-8 flex items-center justify-between border-t border-white/5 bg-[#0C1020]/50">
-          <p className="text-xs text-gray-500">Showing {filteredInvoices.length} of {invoices.length} invoices</p>
+        <div className="p-8 flex items-center justify-between border-t border-[var(--border-color)] bg-[var(--bg-secondary)]/50">
+          <p className="text-xs text-[var(--text-secondary)]">Showing {filteredInvoices.length} of {invoices.length} invoices</p>
           <div className="flex items-center gap-2">
-            <button className="p-2 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-50" disabled>
+            <button className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-primary)] disabled:opacity-50" disabled>
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button className="w-8 h-8 rounded-lg bg-orange-500 text-white text-xs font-bold">1</button>
-            <button className="p-2 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-50" disabled>
+            <button className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-primary)] disabled:opacity-50" disabled>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -496,9 +525,9 @@ const InvoicesPage = () => {
               className="fixed bottom-8 left-1/2 -translate-x-1/2 glass p-4 rounded-2xl shadow-2xl shadow-black z-50 flex items-center gap-6 border-orange-500/30"
             >
               <span className="text-sm font-bold text-orange-500">{selectedInvoices.length} selected</span>
-              <div className="h-6 w-px bg-white/10" />
+              <div className="h-6 w-px bg-[var(--border-color)]" />
               <div className="flex items-center gap-2">
-                <button className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                <button className="px-4 py-2 bg-[var(--bg-primary)]/5 hover:bg-[var(--bg-primary)]/10 rounded-xl text-xs font-bold transition-all flex items-center gap-2">
                   <Download className="w-4 h-4" /> Download PDFs
                 </button>
                 <button 
@@ -507,12 +536,15 @@ const InvoicesPage = () => {
                 >
                   Mark as Paid
                 </button>
-                <button className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 rounded-xl text-xs font-bold transition-all">
+                <button 
+                  onClick={() => handleDeleteInvoice()}
+                  className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 rounded-xl text-xs font-bold transition-all"
+                >
                   Delete
                 </button>
               </div>
-              <button onClick={() => setSelectedInvoices([])} className="p-2 hover:bg-white/10 rounded-lg">
-                <X className="w-4 h-4 text-gray-500" />
+              <button onClick={() => setSelectedInvoices([])} className="p-2 hover:bg-[var(--bg-primary)]/10 rounded-lg">
+                <X className="w-4 h-4 text-[var(--text-secondary)]" />
               </button>
             </motion.div>
           )}
@@ -544,6 +576,10 @@ const InvoicesPage = () => {
         profile={profile}
         autoDownload={autoDownload}
         onDownloadComplete={() => setAutoDownload(false)}
+        onDelete={(id) => {
+          setInvoices(prev => prev.filter(inv => inv.id !== id));
+          setSelectedInvoice(null);
+        }}
       />
     </div>
   );

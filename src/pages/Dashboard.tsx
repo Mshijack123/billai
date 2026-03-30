@@ -55,12 +55,13 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+import { useTheme } from '../components/ThemeContext';
 import { useInvoiceLimit } from '../hooks/useInvoiceLimit';
 
 const StatCard = ({ title, value, label, trend, icon: Icon, color }: any) => (
   <motion.div 
-    whileHover={{ y: -5, borderColor: 'rgba(255, 255, 255, 0.1)' }}
-    className="glass p-6 rounded-[2.5rem] border border-white/5 transition-all relative overflow-hidden group"
+    whileHover={{ y: -5, borderColor: 'rgba(255, 92, 26, 0.2)' }}
+    className="glass p-6 rounded-[2.5rem] border border-[var(--border-color)] transition-all relative overflow-hidden group"
   >
     <div className={cn("absolute -right-4 -top-4 w-24 h-24 blur-3xl opacity-10 transition-opacity group-hover:opacity-20", color)} />
     
@@ -78,12 +79,12 @@ const StatCard = ({ title, value, label, trend, icon: Icon, color }: any) => (
     </div>
     
     <div className="space-y-1">
-      <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">{title}</p>
+      <p className="text-xs text-[var(--text-secondary)] font-bold uppercase tracking-widest">{title}</p>
       <p className="text-3xl font-display font-bold tracking-tight">{value}</p>
     </div>
     
-    <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
-      <p className="text-[10px] text-gray-500 font-medium">{label}</p>
+    <div className="mt-4 pt-4 border-t border-[var(--border-color)] flex items-center justify-between">
+      <p className="text-[10px] text-[var(--text-secondary)] font-medium">{label}</p>
       <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
     </div>
   </motion.div>
@@ -92,6 +93,7 @@ const StatCard = ({ title, value, label, trend, icon: Icon, color }: any) => (
 const Dashboard = () => {
   const { profile } = useFirebase();
   const { openPricing } = usePricing();
+  const { theme } = useTheme();
   const { invoiceCount, limit, canCreateInvoice, remaining } = useInvoiceLimit();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
@@ -199,17 +201,25 @@ const Dashboard = () => {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: '#0C1020',
-        titleColor: '#fff',
-        bodyColor: '#9ca3af',
+        backgroundColor: theme === 'dark' ? '#0C1020' : '#ffffff',
+        titleColor: theme === 'dark' ? '#fff' : '#0f172a',
+        bodyColor: theme === 'dark' ? '#9ca3af' : '#64748b',
         padding: 12,
         cornerRadius: 12,
         displayColors: false,
+        borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+        borderWidth: 1,
       },
     },
     scales: {
-      x: { grid: { display: false }, ticks: { color: '#4b5563' } },
-      y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#4b5563' } },
+      x: { 
+        grid: { display: false }, 
+        ticks: { color: theme === 'dark' ? '#4b5563' : '#94a3b8' } 
+      },
+      y: { 
+        grid: { color: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }, 
+        ticks: { color: theme === 'dark' ? '#4b5563' : '#94a3b8' } 
+      },
     },
   };
 
@@ -246,7 +256,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <h4 className="text-lg font-bold text-amber-500">Business Profile Incomplete!</h4>
-                <p className="text-sm text-gray-400">Invoices par sahi details dikhane ke liye apna profile complete karein.</p>
+                <p className="text-sm text-[var(--text-secondary)]">Invoices par sahi details dikhane ke liye apna profile complete karein.</p>
               </div>
             </div>
             <Link 
@@ -280,7 +290,7 @@ const Dashboard = () => {
               <p className={cn("text-sm font-bold", invoiceCount >= limit ? "text-red-500" : "text-orange-500")}>
                 {invoiceCount >= limit ? "Invoice Limit Reached!" : "Limit Khatam Hone Wali Hai!"}
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-[var(--text-secondary)]">
                 Aapne {invoiceCount}/{limit} invoices use kar liye hain. {remaining} baaki hain.
               </p>
             </div>
@@ -328,18 +338,18 @@ const Dashboard = () => {
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Revenue Chart */}
-        <div className="lg:col-span-2 glass p-8 rounded-[2.5rem] border border-white/5 relative overflow-hidden">
+        <div className="lg:col-span-2 glass p-8 rounded-[2.5rem] border border-[var(--border-color)] relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full blur-[100px] -mr-32 -mt-32" />
           
           <div className="relative z-10">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
               <div>
                 <h3 className="text-xl font-bold">Revenue Trend</h3>
-                <p className="text-xs text-gray-500">Monthly business performance overview</p>
+                <p className="text-xs text-[var(--text-secondary)]">Monthly business performance overview</p>
               </div>
-              <div className="flex items-center gap-2 bg-white/5 p-1 rounded-xl border border-white/10">
+              <div className="flex items-center gap-2 bg-[var(--bg-secondary)] p-1 rounded-xl border border-[var(--border-color)]">
                 <button className="px-4 py-1.5 rounded-lg bg-orange-500 text-white text-[10px] font-bold uppercase tracking-widest transition-all">Monthly</button>
-                <button className="px-4 py-1.5 rounded-lg hover:bg-white/5 text-gray-500 text-[10px] font-bold uppercase tracking-widest transition-all">Yearly</button>
+                <button className="px-4 py-1.5 rounded-lg hover:bg-[var(--bg-primary)]/5 text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest transition-all">Yearly</button>
               </div>
             </div>
             <div className="h-80 w-full">
@@ -350,7 +360,7 @@ const Dashboard = () => {
 
         {/* Quick Actions */}
         <div className="space-y-6">
-          <div className="glass p-8 rounded-[2.5rem] border border-white/5 flex flex-col gap-4 relative overflow-hidden group">
+          <div className="glass p-8 rounded-[2.5rem] border border-[var(--border-color)] flex flex-col gap-4 relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             
             <h3 className="text-xl font-bold mb-2 relative z-10">Quick Actions</h3>
@@ -380,26 +390,26 @@ const Dashboard = () => {
               <button 
                 onClick={() => canCreateInvoice ? setIsManualModalOpen(true) : openPricing()}
                 className={cn(
-                  "p-4 bg-white/5 border border-white/10 rounded-2xl text-left transition-all hover:bg-white/10 group/item",
+                  "p-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl text-left transition-all hover:bg-[var(--bg-primary)]/5 group/item",
                   !canCreateInvoice && "opacity-50 grayscale cursor-not-allowed"
                 )}
               >
-                <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center mb-3 group-hover/item:scale-110 transition-transform">
-                  <FileText className="w-5 h-5 text-gray-400 group-hover/item:text-orange-500 transition-colors" />
+                <div className="w-10 h-10 bg-[var(--bg-primary)]/5 rounded-xl flex items-center justify-center mb-3 group-hover/item:scale-110 transition-transform">
+                  <FileText className="w-5 h-5 text-[var(--text-secondary)] group-hover/item:text-orange-500 transition-colors" />
                 </div>
                 <p className="text-xs font-bold">Manual</p>
-                <p className="text-[9px] text-gray-500">Standard way</p>
+                <p className="text-[9px] text-[var(--text-secondary)]">Standard way</p>
               </button>
 
               <Link 
                 to="/customers?add=true"
-                className="p-4 bg-white/5 border border-white/10 rounded-2xl text-left hover:bg-white/10 group/item relative z-10"
+                className="p-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl text-left hover:bg-[var(--bg-primary)]/5 group/item relative z-10"
               >
-                <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center mb-3 group-hover/item:scale-110 transition-transform">
-                  <Plus className="w-5 h-5 text-gray-400 group-hover/item:text-orange-500 transition-colors" />
+                <div className="w-10 h-10 bg-[var(--bg-primary)]/5 rounded-xl flex items-center justify-center mb-3 group-hover/item:scale-110 transition-transform">
+                  <Plus className="w-5 h-5 text-[var(--text-secondary)] group-hover/item:text-orange-500 transition-colors" />
                 </div>
                 <p className="text-xs font-bold">Customer</p>
-                <p className="text-[9px] text-gray-500">Add new client</p>
+                <p className="text-[9px] text-[var(--text-secondary)]">Add new client</p>
               </Link>
             </div>
           </div>
@@ -412,7 +422,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <p className="text-sm font-bold text-orange-500 mb-1">Pro Tip!</p>
-                <p className="text-xs text-gray-400 leading-relaxed">
+                <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                   Aap voice commands se bhi invoice bana sakte hain. Bas mic icon par click karein.
                 </p>
               </div>
@@ -422,11 +432,11 @@ const Dashboard = () => {
       </div>
 
       {/* Recent Invoices */}
-      <div className="glass rounded-[2.5rem] border border-white/5 overflow-hidden">
-        <div className="p-8 flex justify-between items-center border-b border-white/5">
+      <div className="glass rounded-[2.5rem] border border-[var(--border-color)] overflow-hidden">
+        <div className="p-8 flex justify-between items-center border-b border-[var(--border-color)]">
           <div>
             <h3 className="text-xl font-bold">Recent Invoices</h3>
-            <p className="text-xs text-gray-500">Latest transactions</p>
+            <p className="text-xs text-[var(--text-secondary)]">Latest transactions</p>
           </div>
           <Link to="/invoices" className="text-xs font-bold text-orange-500 hover:underline">Sab dekho →</Link>
         </div>
@@ -435,7 +445,7 @@ const Dashboard = () => {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="text-[10px] text-gray-500 uppercase tracking-widest border-b border-white/5">
+              <tr className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest border-b border-[var(--border-color)]">
                 <th className="px-8 py-4 font-bold">Invoice #</th>
                 <th className="px-8 py-4 font-bold">Customer</th>
                 <th className="px-8 py-4 font-bold">Amount</th>
@@ -443,13 +453,13 @@ const Dashboard = () => {
                 <th className="px-8 py-4 font-bold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-[var(--border-color)]">
               {invoices.slice(0, 5).map((inv) => (
-                <tr key={inv.id} className="hover:bg-white/5 transition-colors group">
+                <tr key={inv.id} className="hover:bg-[var(--bg-primary)]/5 transition-colors group">
                   <td className="px-8 py-4 font-mono text-sm">{inv.invoiceNumber}</td>
                   <td className="px-8 py-4">
                     <p className="text-sm font-bold">{inv.customerName}</p>
-                    <p className="text-[10px] text-gray-500">{new Date(inv.date).toLocaleDateString()}</p>
+                    <p className="text-[10px] text-[var(--text-secondary)]">{new Date(inv.date).toLocaleDateString()}</p>
                   </td>
                   <td className="px-8 py-4">
                     <p className="text-sm font-bold">₹{inv.total.toLocaleString()}</p>
@@ -471,24 +481,24 @@ const Dashboard = () => {
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => setSelectedInvoice(inv)}
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                        className="p-2 hover:bg-[var(--bg-primary)]/10 rounded-lg transition-colors"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => handleWhatsAppShare(inv)}
-                        className="p-2 hover:bg-green-500/10 rounded-lg text-gray-400 hover:text-green-500 transition-colors"
+                        className="p-2 hover:bg-green-500/10 rounded-lg text-[var(--text-secondary)] hover:text-green-500 transition-colors"
                       >
                         <Share2 className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => setSelectedInvoice(inv)}
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                        className="p-2 hover:bg-[var(--bg-primary)]/10 rounded-lg transition-colors"
                         title="Download PDF"
                       >
                         <Download className="w-4 h-4" />
                       </button>
-                      <button className="p-2 hover:bg-white/10 rounded-lg transition-colors"><MoreVertical className="w-4 h-4" /></button>
+                      <button className="p-2 hover:bg-[var(--bg-primary)]/10 rounded-lg transition-colors"><MoreVertical className="w-4 h-4" /></button>
                     </div>
                   </td>
                 </tr>
@@ -498,14 +508,14 @@ const Dashboard = () => {
         </div>
 
         {/* Mobile Card View */}
-        <div className="md:hidden divide-y divide-white/5">
+        <div className="md:hidden divide-y divide-[var(--border-color)]">
           {invoices.slice(0, 5).map((inv) => (
-            <div key={inv.id} className="p-6 space-y-4 active:bg-white/5 transition-colors">
+            <div key={inv.id} className="p-6 space-y-4 active:bg-[var(--bg-primary)]/5 transition-colors">
               <div className="flex justify-between items-start">
                 <div onClick={() => setSelectedInvoice(inv)}>
-                  <p className="text-xs font-mono text-gray-500 mb-1">{inv.invoiceNumber}</p>
+                  <p className="text-xs font-mono text-[var(--text-secondary)] mb-1">{inv.invoiceNumber}</p>
                   <h4 className="font-bold text-lg">{inv.customerName}</h4>
-                  <p className="text-xs text-gray-500">{new Date(inv.date).toLocaleDateString()}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">{new Date(inv.date).toLocaleDateString()}</p>
                 </div>
                 <span className={cn(
                   "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
@@ -519,7 +529,7 @@ const Dashboard = () => {
               
               <div className="flex justify-between items-end">
                 <div>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Total Amount</p>
+                  <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold">Total Amount</p>
                   <p className="text-xl font-bold font-mono text-orange-500">₹{inv.total.toLocaleString()}</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -531,7 +541,7 @@ const Dashboard = () => {
                   </button>
                   <button 
                     onClick={() => setSelectedInvoice(inv)}
-                    className="p-3 bg-white/5 text-gray-400 rounded-xl"
+                    className="p-3 bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded-xl"
                   >
                     <Eye className="w-5 h-5" />
                   </button>
@@ -542,7 +552,7 @@ const Dashboard = () => {
         </div>
 
         {invoices.length === 0 && (
-          <div className="px-8 py-20 text-center text-gray-500">
+          <div className="px-8 py-20 text-center text-[var(--text-secondary)]">
             <FileText className="w-12 h-12 mx-auto mb-4 opacity-20" />
             <p>Abhi tak koi invoice nahi hai.</p>
             <button onClick={() => setIsAIModalOpen(true)} className="text-orange-500 font-bold mt-2 hover:underline">Pehla invoice AI se banao ✨</button>

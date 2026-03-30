@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, googleProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, db, doc, setDoc } from '../firebase';
 import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle2, Mail, Lock, User, Store, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Mail, Lock, User, Store, ArrowRight, Loader2, AlertCircle, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../components/ThemeContext';
 
 const LoginPage = () => {
+  const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,9 +100,17 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-[#060810]">
+    <div className="min-h-screen flex flex-col md:flex-row bg-[var(--bg-primary)] text-[var(--text-primary)]">
+      {/* Theme Toggle for Login Page */}
+      <button 
+        onClick={toggleTheme}
+        className="fixed top-6 right-6 z-50 p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] hover:bg-[var(--border-color)] transition-all shadow-lg"
+      >
+        {theme === 'dark' ? <Sun className="w-5 h-5 text-orange-500" /> : <Moon className="w-5 h-5 text-orange-500" />}
+      </button>
+
       {/* Left Panel - Brand Story */}
-      <div className="hidden md:flex md:w-3/5 relative overflow-hidden p-12 flex-col justify-between">
+      <div className="hidden md:flex md:w-3/5 relative overflow-hidden p-12 flex-col justify-between border-r border-[var(--border-color)]">
         {/* Animated Background */}
         <div className="absolute inset-0 -z-10">
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-orange-500/10 via-purple-500/5 to-transparent animate-pulse" />
@@ -122,7 +132,7 @@ const LoginPage = () => {
             बिल बनाना <br />
             <span className="text-orange-500">इतना आसान?</span>
           </motion.h1>
-          <p className="text-xl text-gray-400 mb-12">
+          <p className="text-xl text-[var(--text-secondary)] mb-12">
             Hindi mein type karo, GST invoice seconds mein ready.
           </p>
 
@@ -134,11 +144,11 @@ const LoginPage = () => {
               y: [0, -10, 0]
             }}
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-            className="glass p-8 rounded-[2rem] border border-white/10 shadow-2xl shadow-orange-500/10 max-w-sm"
+            className="glass p-8 rounded-[2rem] border border-[var(--border-color)] shadow-2xl shadow-orange-500/10 max-w-sm"
           >
             <div className="flex justify-between items-start mb-8">
               <div>
-                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">Customer</p>
+                <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold mb-1">Customer</p>
                 <p className="text-lg font-bold">Rohit Kumar</p>
               </div>
               <div className="bg-orange-500/10 text-orange-500 text-[10px] font-bold px-2 py-1 rounded">PENDING</div>
@@ -146,14 +156,14 @@ const LoginPage = () => {
             
             <div className="space-y-4 mb-8">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Running Shoes x3</span>
+                <span className="text-[var(--text-secondary)]">Running Shoes x3</span>
                 <span className="font-mono">₹6,000</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">GST (18%)</span>
+                <span className="text-[var(--text-secondary)]">GST (18%)</span>
                 <span className="font-mono">₹1,080</span>
               </div>
-              <div className="h-px bg-white/5" />
+              <div className="h-px bg-[var(--border-color)]" />
               <div className="flex justify-between text-lg font-bold">
                 <span>Total</span>
                 <span className="text-orange-500 font-mono">₹7,080</span>
@@ -161,35 +171,35 @@ const LoginPage = () => {
             </div>
 
             <div className="flex gap-4">
-              <div className="flex items-center gap-1 text-[10px] text-gray-500"><CheckCircle2 className="w-3 h-3 text-orange-500" /> GST Ready</div>
-              <div className="flex items-center gap-1 text-[10px] text-gray-500"><CheckCircle2 className="w-3 h-3 text-orange-500" /> Instant PDF</div>
+              <div className="flex items-center gap-1 text-[10px] text-[var(--text-secondary)]"><CheckCircle2 className="w-3 h-3 text-orange-500" /> GST Ready</div>
+              <div className="flex items-center gap-1 text-[10px] text-[var(--text-secondary)]"><CheckCircle2 className="w-3 h-3 text-orange-500" /> Instant PDF</div>
             </div>
           </motion.div>
         </div>
 
-        <div className="flex items-center gap-6 text-sm text-gray-500">
+        <div className="flex items-center gap-6 text-sm text-[var(--text-secondary)]">
           <p>2,400+ Indian businesses trust BillAI</p>
           <div className="flex items-center gap-1 text-orange-500">
             {"★★★★★".split("").map((s, i) => <span key={i}>{s}</span>)}
-            <span className="text-gray-400 ml-2">4.9/5 rating</span>
+            <span className="text-[var(--text-secondary)] ml-2">4.9/5 rating</span>
           </div>
         </div>
       </div>
 
       {/* Right Panel - Auth Form */}
-      <div className="flex-1 bg-[#0C1020] p-8 md:p-16 flex flex-col justify-center">
+      <div className="flex-1 bg-[var(--bg-secondary)] p-8 md:p-16 flex flex-col justify-center">
         <div className="max-w-md mx-auto w-full">
           {/* Tab Switcher */}
-          <div className="flex bg-white/5 p-1 rounded-xl mb-10">
+          <div className="flex bg-[var(--bg-primary)] p-1 rounded-xl mb-10 border border-[var(--border-color)]">
             <button 
               onClick={() => { setActiveTab('login'); setError(null); }}
-              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'login' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-gray-400 hover:text-white'}`}
+              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'login' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
             >
               Login
             </button>
             <button 
               onClick={() => { setActiveTab('signup'); setError(null); }}
-              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'signup' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-gray-400 hover:text-white'}`}
+              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'signup' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
             >
               Sign Up
             </button>
@@ -215,28 +225,28 @@ const LoginPage = () => {
                 exit={{ opacity: 0, y: -10 }}
               >
                 <h2 className="text-3xl font-display font-bold mb-2">Wapas aao! 👋</h2>
-                <p className="text-gray-400 mb-8">Apna account mein login karo</p>
+                <p className="text-[var(--text-secondary)] mb-8">Apna account mein login karo</p>
 
                 <button 
                   onClick={handleGoogleLogin}
                   disabled={isLoading}
-                  className="w-full py-3 px-4 rounded-xl border border-white/10 hover:bg-white/5 flex items-center justify-center gap-3 font-bold transition-all mb-6 disabled:opacity-50"
+                  className="w-full py-3 px-4 rounded-xl border border-[var(--border-color)] hover:bg-[var(--bg-primary)] flex items-center justify-center gap-3 font-bold transition-all mb-6 disabled:opacity-50"
                 >
                   {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />}
                   Google se login karo
                 </button>
 
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="h-px flex-1 bg-white/5" />
-                  <span className="text-xs text-gray-600 uppercase tracking-widest font-bold">ya email se</span>
-                  <div className="h-px flex-1 bg-white/5" />
+                  <div className="h-px flex-1 bg-[var(--border-color)]" />
+                  <span className="text-xs text-[var(--text-secondary)] uppercase tracking-widest font-bold">ya email se</span>
+                  <div className="h-px flex-1 bg-[var(--border-color)]" />
                 </div>
 
                 <form className="space-y-4" onSubmit={handleEmailLogin}>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Email Address</label>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider ml-1">Email Address</label>
                     <div className="relative">
-                      <Mail className="w-5 h-5 text-gray-600 absolute left-4 top-1/2 -translate-y-1/2" />
+                      <Mail className="w-5 h-5 text-[var(--text-secondary)] absolute left-4 top-1/2 -translate-y-1/2" />
                       <input 
                         type="email" 
                         placeholder="name@company.com" 
@@ -249,11 +259,11 @@ const LoginPage = () => {
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between items-center ml-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Password</label>
+                      <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Password</label>
                       <button type="button" className="text-[10px] text-orange-500 font-bold hover:underline">Password bhool gaye?</button>
                     </div>
                     <div className="relative">
-                      <Lock className="w-5 h-5 text-gray-600 absolute left-4 top-1/2 -translate-y-1/2" />
+                      <Lock className="w-5 h-5 text-[var(--text-secondary)] absolute left-4 top-1/2 -translate-y-1/2" />
                       <input 
                         type="password" 
                         placeholder="••••••••" 
@@ -266,8 +276,8 @@ const LoginPage = () => {
                   </div>
                   
                   <div className="flex items-center gap-2 ml-1 mb-6">
-                    <input type="checkbox" className="w-4 h-4 rounded border-white/10 bg-white/5 text-orange-500 focus:ring-orange-500" />
-                    <span className="text-xs text-gray-400">Mujhe yaad rakho</span>
+                    <input type="checkbox" className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-primary)] text-orange-500 focus:ring-orange-500" />
+                    <span className="text-xs text-[var(--text-secondary)]">Mujhe yaad rakho</span>
                   </div>
 
                   <button 
@@ -287,29 +297,29 @@ const LoginPage = () => {
                 exit={{ opacity: 0, y: -10 }}
               >
                 <h2 className="text-3xl font-display font-bold mb-2">Shuru karo! 🚀</h2>
-                <p className="text-gray-400 mb-8">Free account banao — credit card nahi chahiye</p>
+                <p className="text-[var(--text-secondary)] mb-8">Free account banao — credit card nahi chahiye</p>
 
                 <button 
                   onClick={handleGoogleLogin}
                   disabled={isLoading}
-                  className="w-full py-3 px-4 rounded-xl border border-white/10 hover:bg-white/5 flex items-center justify-center gap-3 font-bold transition-all mb-6 disabled:opacity-50"
+                  className="w-full py-3 px-4 rounded-xl border border-[var(--border-color)] hover:bg-[var(--bg-primary)] flex items-center justify-center gap-3 font-bold transition-all mb-6 disabled:opacity-50"
                 >
                   {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />}
                   Google se signup karo
                 </button>
 
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="h-px flex-1 bg-white/5" />
-                  <span className="text-xs text-gray-600 uppercase tracking-widest font-bold">ya details bharo</span>
-                  <div className="h-px flex-1 bg-white/5" />
+                  <div className="h-px flex-1 bg-[var(--border-color)]" />
+                  <span className="text-xs text-[var(--text-secondary)] uppercase tracking-widest font-bold">ya details bharo</span>
+                  <div className="h-px flex-1 bg-[var(--border-color)]" />
                 </div>
 
                 <form className="space-y-4" onSubmit={handleEmailSignup}>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Naam</label>
+                      <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider ml-1">Naam</label>
                       <div className="relative">
-                        <User className="w-5 h-5 text-gray-600 absolute left-4 top-1/2 -translate-y-1/2" />
+                        <User className="w-5 h-5 text-[var(--text-secondary)] absolute left-4 top-1/2 -translate-y-1/2" />
                         <input 
                           type="text" 
                           placeholder="Ramesh" 
@@ -321,9 +331,9 @@ const LoginPage = () => {
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Business</label>
+                      <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider ml-1">Business</label>
                       <div className="relative">
-                        <Store className="w-5 h-5 text-gray-600 absolute left-4 top-1/2 -translate-y-1/2" />
+                        <Store className="w-5 h-5 text-[var(--text-secondary)] absolute left-4 top-1/2 -translate-y-1/2" />
                         <input 
                           type="text" 
                           placeholder="Gupta Shoes" 
@@ -336,9 +346,9 @@ const LoginPage = () => {
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Email Address</label>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider ml-1">Email Address</label>
                     <div className="relative">
-                      <Mail className="w-5 h-5 text-gray-600 absolute left-4 top-1/2 -translate-y-1/2" />
+                      <Mail className="w-5 h-5 text-[var(--text-secondary)] absolute left-4 top-1/2 -translate-y-1/2" />
                       <input 
                         type="email" 
                         placeholder="name@company.com" 
@@ -350,9 +360,9 @@ const LoginPage = () => {
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Password</label>
+                    <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider ml-1">Password</label>
                     <div className="relative">
-                      <Lock className="w-5 h-5 text-gray-600 absolute left-4 top-1/2 -translate-y-1/2" />
+                      <Lock className="w-5 h-5 text-[var(--text-secondary)] absolute left-4 top-1/2 -translate-y-1/2" />
                       <input 
                         type="password" 
                         placeholder="••••••••" 
@@ -372,7 +382,7 @@ const LoginPage = () => {
                     {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Account banao — Free mein →'}
                   </button>
                   
-                  <p className="text-[10px] text-gray-500 text-center mt-4">
+                  <p className="text-[10px] text-[var(--text-secondary)] text-center mt-4">
                     Account banake aap agree karte ho <span className="text-orange-500 cursor-pointer hover:underline">Terms</span> aur <span className="text-orange-500 cursor-pointer hover:underline">Privacy Policy</span> se
                   </p>
                 </form>

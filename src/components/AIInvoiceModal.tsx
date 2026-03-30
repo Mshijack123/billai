@@ -320,24 +320,24 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-3xl bg-[#0C1020] border border-orange-500/30 rounded-[2.5rem] shadow-2xl shadow-orange-500/10 overflow-hidden"
+        className="relative w-full max-w-3xl bg-[var(--bg-primary)] border border-orange-500/30 rounded-[2.5rem] shadow-2xl shadow-orange-500/10 overflow-hidden"
       >
         {/* Header */}
-        <div className="p-6 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-orange-500/5 to-transparent">
+        <div className="p-6 border-b border-[var(--border-color)] flex items-center justify-between bg-gradient-to-r from-orange-500/5 to-transparent">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center shadow-inner">
               <Sparkles className="w-6 h-6 text-orange-500" />
             </div>
             <div>
               <h2 className="text-2xl font-bold tracking-tight">AI Invoice Generator</h2>
-              <p className="text-xs text-gray-500 font-medium">Scan photo ya voice se invoice banayein</p>
+              <p className="text-xs text-[var(--text-secondary)] font-medium">Scan photo ya voice se invoice banayein</p>
             </div>
           </div>
           <button 
             onClick={onClose} 
-            className="p-2 hover:bg-white/5 rounded-xl transition-all group"
+            className="p-2 hover:bg-[var(--bg-secondary)] rounded-xl transition-all group"
           >
-            <X className="w-6 h-6 text-gray-500 group-hover:text-white transition-colors" />
+            <X className="w-6 h-6 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
           </button>
         </div>
 
@@ -352,12 +352,12 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                 className="space-y-8"
               >
                 {/* Mode Selector */}
-                <div className="flex p-1 bg-white/5 rounded-2xl border border-white/5">
+                <div className="flex p-1 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)]">
                   <button
                     onClick={() => setInputMode('text')}
                     className={cn(
                       "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all",
-                      inputMode === 'text' ? "bg-orange-500 text-white shadow-lg" : "text-gray-500 hover:text-gray-300"
+                      inputMode === 'text' ? "bg-orange-500 text-white shadow-lg" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                     )}
                   >
                     <Mic className="w-4 h-4" /> Voice / Text
@@ -366,7 +366,7 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                     onClick={() => setInputMode('image')}
                     className={cn(
                       "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all",
-                      inputMode === 'image' ? "bg-orange-500 text-white shadow-lg" : "text-gray-500 hover:text-gray-300"
+                      inputMode === 'image' ? "bg-orange-500 text-white shadow-lg" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                     )}
                   >
                     <ImageIcon className="w-4 h-4" /> Scan Bill Photo
@@ -376,14 +376,14 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                 {inputMode === 'text' ? (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Aapka Prompt</label>
+                      <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">Aapka Prompt</label>
                       <button 
                         onClick={toggleListening}
                         className={cn(
                           "flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm",
                           isListening 
                             ? "bg-red-500 text-white animate-pulse" 
-                            : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+                            : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)]"
                         )}
                       >
                         {isListening ? (
@@ -402,11 +402,11 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder="Example: 'Rohit ko 3 shoes ₹2000 each GST 18% unpaid'..."
-                        className="w-full h-48 bg-[#141C2E] border border-white/5 rounded-[2rem] p-6 focus:outline-none focus:border-orange-500/50 transition-all resize-none text-lg leading-relaxed shadow-inner"
+                        className="w-full h-48 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-[2rem] p-6 focus:outline-none focus:border-orange-500/50 transition-all resize-none text-lg leading-relaxed shadow-inner"
                       />
                       <div className="absolute bottom-4 right-6 flex gap-2">
                         {['हिंदी', 'Hinglish', 'English'].map(lang => (
-                          <span key={lang} className="px-2 py-1 bg-white/5 rounded-md text-[8px] font-bold text-gray-600 uppercase tracking-tighter">{lang}</span>
+                          <span key={lang} className="px-2 py-1 bg-[var(--bg-primary)] rounded-md text-[8px] font-bold text-[var(--text-secondary)] uppercase tracking-tighter">{lang}</span>
                         ))}
                       </div>
                     </div>
@@ -414,7 +414,7 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                 ) : (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center px-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Bill Photo Upload Karein</label>
+                      <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">Bill Photo Upload Karein</label>
                       {imagePreview && (
                         <button 
                           onClick={removeImage}
@@ -426,7 +426,7 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                     </div>
 
                     {imagePreview ? (
-                      <div className="relative w-full aspect-[4/3] rounded-[2.5rem] overflow-hidden border border-white/5 bg-[#141C2E] group shadow-2xl">
+                      <div className="relative w-full aspect-[4/3] rounded-[2.5rem] overflow-hidden border border-[var(--border-color)] bg-[var(--bg-secondary)] group shadow-2xl">
                         <img src={imagePreview} alt="Bill Preview" className="w-full h-full object-contain" />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <label className="cursor-pointer p-4 bg-white/10 backdrop-blur-md rounded-full hover:bg-white/20 transition-all">
@@ -436,13 +436,13 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                         </div>
                       </div>
                     ) : (
-                      <label className="flex flex-col items-center justify-center w-full aspect-[4/3] border-2 border-dashed border-white/10 rounded-[2.5rem] bg-[#141C2E] hover:bg-[#1a243a] hover:border-orange-500/30 transition-all cursor-pointer group">
+                      <label className="flex flex-col items-center justify-center w-full aspect-[4/3] border-2 border-dashed border-[var(--border-color)] rounded-[2.5rem] bg-[var(--bg-secondary)] hover:bg-[var(--bg-primary)] hover:border-orange-500/30 transition-all cursor-pointer group">
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
                           <div className="w-20 h-20 bg-orange-500/10 rounded-3xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                             <Camera className="w-10 h-10 text-orange-500" />
                           </div>
-                          <p className="mb-2 text-lg font-bold text-gray-300">Bill ki photo khichein</p>
-                          <p className="text-sm text-gray-500">Ya gallery se select karein (Max 5MB)</p>
+                          <p className="mb-2 text-lg font-bold text-[var(--text-primary)]">Bill ki photo khichein</p>
+                          <p className="text-sm text-[var(--text-secondary)]">Ya gallery se select karein (Max 5MB)</p>
                         </div>
                         <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageUpload} />
                       </label>
@@ -507,7 +507,7 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                 <div className="flex items-center justify-between">
                   <button 
                     onClick={() => setStep('input')}
-                    className="flex items-center gap-2 text-gray-500 hover:text-white transition-colors font-bold text-sm"
+                    className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-bold text-sm"
                   >
                     <ArrowLeft className="w-4 h-4" /> Wapas Jao
                   </button>
@@ -516,7 +516,7 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                   </div>
                 </div>
 
-                <div className="bg-white/[0.02] border border-white/5 rounded-[2.5rem] p-8 space-y-8 shadow-inner">
+                <div className="bg-[var(--bg-secondary)]/50 border border-[var(--border-color)] rounded-[2.5rem] p-8 space-y-8 shadow-inner">
                   {/* Customer Section */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-4">
@@ -524,7 +524,7 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                         <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
                           <User className="w-4 h-4 text-blue-500" />
                         </div>
-                        <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Customer Details</p>
+                        <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold">Customer Details</p>
                       </div>
                       
                       <div className="space-y-4 pl-10">
@@ -533,7 +533,7 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                             type="text"
                             value={parsedData.customer_name}
                             onChange={(e) => setParsedData({ ...parsedData, customer_name: e.target.value })}
-                            className="text-2xl font-bold tracking-tight bg-transparent border-b border-white/10 focus:border-orange-500 outline-none w-full"
+                            className="text-2xl font-bold tracking-tight bg-transparent border-b border-[var(--border-color)] focus:border-orange-500 outline-none w-full"
                             placeholder="Customer Name"
                           />
                           <div className="flex gap-4 mt-2">
@@ -541,14 +541,14 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                               type="text"
                               value={parsedData.customer_phone || ''}
                               onChange={(e) => setParsedData({ ...parsedData, customer_phone: e.target.value })}
-                              className="text-xs text-gray-400 bg-transparent border-b border-white/10 focus:border-orange-500 outline-none flex-1"
+                              className="text-xs text-[var(--text-secondary)] bg-transparent border-b border-[var(--border-color)] focus:border-orange-500 outline-none flex-1"
                               placeholder="Phone Number"
                             />
                             <input 
                               type="text"
                               value={parsedData.customer_address || ''}
                               onChange={(e) => setParsedData({ ...parsedData, customer_address: e.target.value })}
-                              className="text-xs text-gray-400 bg-transparent border-b border-white/10 focus:border-orange-500 outline-none flex-[2]"
+                              className="text-xs text-[var(--text-secondary)] bg-transparent border-b border-[var(--border-color)] focus:border-orange-500 outline-none flex-[2]"
                               placeholder="Address"
                             />
                           </div>
@@ -564,7 +564,7 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                         </div>
 
                         <div className="space-y-2">
-                          <p className="text-[10px] text-gray-600 uppercase tracking-widest font-bold">Select Existing</p>
+                          <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold">Select Existing</p>
                           <select 
                             value={matchedCustomer?.id || ''}
                             onChange={(e) => {
@@ -576,7 +576,7 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                                 setMatchedCustomer(null);
                               }
                             }}
-                            className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none w-full focus:border-orange-500/30 transition-all"
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl px-4 py-3 text-sm focus:outline-none w-full focus:border-orange-500/30 transition-all"
                           >
                             <option value="">-- Naya Customer Banao --</option>
                             {existingCustomers.map(c => (
@@ -592,23 +592,23 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                         <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center">
                           <FileText className="w-4 h-4 text-purple-500" />
                         </div>
-                        <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Invoice Settings</p>
+                        <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold">Invoice Settings</p>
                       </div>
 
                       <div className="space-y-4 pl-10">
                         <div className="space-y-2">
-                          <p className="text-[10px] text-gray-600 uppercase tracking-widest font-bold">Customer State</p>
+                          <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold">Customer State</p>
                           <select 
                             value={customerState}
                             onChange={(e) => setCustomerState(e.target.value)}
-                            className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none w-full focus:border-orange-500/30 transition-all"
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl px-4 py-3 text-sm font-bold focus:outline-none w-full focus:border-orange-500/30 transition-all"
                           >
                             {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                           </select>
                         </div>
 
                         <div className="space-y-2">
-                          <p className="text-[10px] text-gray-600 uppercase tracking-widest font-bold">Payment Status</p>
+                          <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold">Payment Status</p>
                           <div className="flex gap-2">
                             {['paid', 'pending', 'partial'].map(status => (
                               <button
@@ -625,7 +625,7 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                                   "flex-1 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all",
                                   parsedData.payment_status === status 
                                     ? "bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/20" 
-                                    : "border-white/10 text-gray-500 hover:bg-white/5 hover:text-gray-300"
+                                    : "border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)]"
                                 )}
                               >
                                 {status}
@@ -643,38 +643,38 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                       <div className="w-8 h-8 bg-orange-500/10 rounded-lg flex items-center justify-center">
                         <Package className="w-4 h-4 text-orange-500" />
                       </div>
-                      <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Items List</p>
+                      <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold">Items List</p>
                     </div>
 
-                    <div className="overflow-hidden rounded-2xl border border-white/5">
+                    <div className="overflow-hidden rounded-2xl border border-[var(--border-color)]">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="bg-white/5">
-                            <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Description</th>
-                            <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-center">Qty</th>
-                            <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">Rate</th>
-                            <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">Total</th>
+                          <tr className="bg-[var(--bg-secondary)]">
+                            <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">Description</th>
+                            <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest text-center">Qty</th>
+                            <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest text-right">Rate</th>
+                            <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest text-right">Total</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-[var(--border-color)]">
                           {parsedData.items.map((item, i) => {
                             const isMatched = existingProducts.some(p => 
                               p.name.toLowerCase() === item.description.toLowerCase() ||
                               item.description.toLowerCase().includes(p.name.toLowerCase())
                             );
                             return (
-                              <tr key={i} className="hover:bg-white/[0.02] transition-colors">
+                              <tr key={i} className="hover:bg-[var(--bg-primary)] transition-colors">
                                 <td className="px-6 py-4">
                                   <div className="flex flex-col">
-                                    <span className="font-bold text-gray-200">{item.description}</span>
+                                    <span className="font-bold text-[var(--text-primary)]">{item.description}</span>
                                     {isMatched && (
                                       <span className="text-[8px] font-bold text-blue-500 uppercase tracking-tighter mt-0.5">Matched from Inventory</span>
                                     )}
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 text-center font-mono text-gray-400">{item.qty}</td>
-                                <td className="px-6 py-4 text-right font-mono text-gray-400">₹{item.rate}</td>
-                                <td className="px-6 py-4 text-right font-mono font-bold text-white">₹{(item.qty * item.rate).toFixed(2)}</td>
+                                <td className="px-6 py-4 text-center font-mono text-[var(--text-secondary)]">{item.qty}</td>
+                                <td className="px-6 py-4 text-right font-mono text-[var(--text-secondary)]">₹{item.rate}</td>
+                                <td className="px-6 py-4 text-right font-mono font-bold text-[var(--text-primary)]">₹{(item.qty * item.rate).toFixed(2)}</td>
                               </tr>
                             );
                           })}
@@ -684,31 +684,31 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
                   </div>
 
                   {/* Summary Section */}
-                  <div className="flex flex-col md:flex-row justify-between gap-8 pt-8 border-t border-white/5">
+                  <div className="flex flex-col md:flex-row justify-between gap-8 pt-8 border-t border-[var(--border-color)]">
                     <div className="flex-1 max-w-sm">
                       {parsedData.payment_status === 'partial' && (
                         <div className="space-y-2">
-                          <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Paid Amount (₹)</p>
+                          <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold">Paid Amount (₹)</p>
                           <input 
                             type="number"
                             value={parsedData.paid_amount || 0}
                             onChange={(e) => setParsedData({...parsedData, paid_amount: Number(e.target.value)})}
-                            className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-lg font-bold focus:outline-none w-full focus:border-orange-500/30 transition-all"
+                            className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl px-4 py-3 text-lg font-bold focus:outline-none w-full focus:border-orange-500/30 transition-all"
                           />
                         </div>
                       )}
                     </div>
 
                     <div className="flex-1 max-w-xs space-y-3">
-                      <div className="flex justify-between text-sm text-gray-500">
+                      <div className="flex justify-between text-sm text-[var(--text-secondary)]">
                         <span className="font-medium">Subtotal</span>
                         <span className="font-mono">₹{parsedData.items.reduce((sum, item) => sum + (item.qty * item.rate), 0).toFixed(2)}</span>
                       </div>
-                      <div className="flex justify-between text-sm text-gray-500">
+                      <div className="flex justify-between text-sm text-[var(--text-secondary)]">
                         <span className="font-medium">GST Total</span>
                         <span className="font-mono">₹{parsedData.items.reduce((sum, item) => sum + (item.qty * item.rate * (item.gst_rate / 100)), 0).toFixed(2)}</span>
                       </div>
-                      <div className="flex justify-between items-center pt-3 border-t border-white/10">
+                      <div className="flex justify-between items-center pt-3 border-t border-[var(--border-color)]">
                         <span className="text-lg font-bold">Grand Total</span>
                         <span className="text-3xl font-black text-orange-500 font-mono tracking-tighter">
                           ₹{parsedData.items.reduce((sum, item) => sum + (item.qty * item.rate * (1 + item.gst_rate / 100)), 0).toFixed(2)}
