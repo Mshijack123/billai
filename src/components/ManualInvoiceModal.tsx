@@ -30,6 +30,9 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
   const [products, setProducts] = useState<Product[]>([]);
   
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [newCustomerName, setNewCustomerName] = useState('');
+  const [newCustomerPhone, setNewCustomerPhone] = useState('');
+  const [newCustomerAddress, setNewCustomerAddress] = useState('');
   const [customerState, setCustomerState] = useState('Rajasthan');
   const [invoiceDate, setInvoiceDate] = useState(getLocalDateString());
   
@@ -167,8 +170,8 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
   };
 
   const handleSave = async () => {
-    if (!profile || !selectedCustomerId) {
-      alert('Please select a customer');
+    if (!profile || (!selectedCustomerId && !newCustomerName)) {
+      alert('Please select or enter a customer');
       return;
     }
 
@@ -180,7 +183,32 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
 
     setIsSaving(true);
     try {
-      const customer = customers.find(c => c.id === selectedCustomerId);
+      let customerId = selectedCustomerId;
+      let customerName = '';
+      let customerPhone = '';
+      let customerAddress = '';
+
+      if (selectedCustomerId) {
+        const customer = customers.find(c => c.id === selectedCustomerId);
+        customerName = customer?.name || 'Unknown';
+        customerPhone = customer?.phone || '';
+        customerAddress = customer?.address || '';
+      } else {
+        // Create new customer
+        const newCustomerRef = await addDoc(collection(db, 'customers'), {
+          businessId: profile.uid,
+          name: newCustomerName,
+          phone: newCustomerPhone,
+          address: newCustomerAddress,
+          state: customerState,
+          createdAt: new Date().toISOString()
+        });
+        customerId = newCustomerRef.id;
+        customerName = newCustomerName;
+        customerPhone = newCustomerPhone;
+        customerAddress = newCustomerAddress;
+      }
+
       const gstType = calculateGSTType(profile.state || 'Rajasthan', customerState);
       
       const prefix = profile.invoiceSettings?.prefix || 'INV';
@@ -192,11 +220,12 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
       const newInvoice: Omit<Invoice, 'id'> = {
         invoiceNumber: `${prefix}-${randomNum}`,
         businessId: profile.uid,
-        customerId: selectedCustomerId,
-        customerName: customer?.name || 'Unknown',
-        customerGstin: customer?.gstin || '',
+        customerId,
+        customerName,
+        customerGstin: '', // Could be added if needed
         customerState: customerState,
-        customerAddress: customer?.address || '',
+        customerAddress,
+        customerPhone,
         // Save business details at the time of creation
         businessName: profile.businessName || profile.displayName || '',
         businessAddress: profile.address || '',
@@ -271,42 +300,117 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
 
         <div className="p-8 overflow-y-auto flex-1 space-y-8">
           {/* Top Info */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Customer Select Karo *</label>
-              <div className="relative">
-                <User className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                <select 
-                  value={selectedCustomerId}
-                  onChange={(e) => {
-                    const c = customers.find(cust => cust.id === e.target.value);
-                    setSelectedCustomerId(e.target.value);
-                    if (c) setCustomerState(c.state);
-                  }}
-                  className="input-dark w-full pl-10 appearance-none"
-                >
-                  <option value="">-- Customer Chuno --</option>
-                  {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Customer Select Karo *</label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <select 
+                    value={selectedCustomerId}
+                    onChange={(e) => {
+                      const c = customers.find(cust => cust.id === e.target.value);
+                      setSelectedCustomerId(e.target.value);
+                      if (c) {
+                        setCustomerState(c.state);
+                        setNewCustomerName('');
+                        setNewCustomerPhone('');
+                        setNewCustomerAddress('');
+                      }
+                    }}
+                    className="input-dark w-full pl-10 appearance-none"
+                  >
+                    <option value="">-- Naya Customer Banao --</option>
+                    {customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
+                  </select>
+                </div>
               </div>
+
+              {!selectedCustomerId && (
+                <div className="space-y-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">New Customer Name *</label>
+                    <input 
+                      type="text"
+                      value={newCustomerName}
+                      onChange={(e) => setNewCustomerName(e.target.value)}
+                      placeholder="Enter customer name..."
+                      className="input-dark w-full"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Phone Number</label>
+                      <input 
+                        type="text"
+                        value={newCustomerPhone}
+                        onChange={(e) => setNewCustomerPhone(e.target.value)}
+                        placeholder="Phone..."
+                        className="input-dark w-full"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">State</label>
+                      <select 
+                        value={customerState}
+                        onChange={(e) => setCustomerState(e.target.value)}
+                        className="input-dark w-full"
+                      >
+                        {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Address</label>
+                    <input 
+                      type="text"
+                      value={newCustomerAddress}
+                      onChange={(e) => setNewCustomerAddress(e.target.value)}
+                      placeholder="Enter address..."
+                      className="input-dark w-full"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {selectedCustomerId && (
+                <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-2">
+                  <p className="text-sm font-bold">{customers.find(c => c.id === selectedCustomerId)?.name}</p>
+                  <p className="text-xs text-gray-500">{customers.find(c => c.id === selectedCustomerId)?.phone}</p>
+                  <p className="text-xs text-gray-500">{customers.find(c => c.id === selectedCustomerId)?.address}</p>
+                  <div className="pt-2">
+                    <label className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Customer State</label>
+                    <select 
+                      value={customerState}
+                      onChange={(e) => setCustomerState(e.target.value)}
+                      className="input-dark w-full mt-1"
+                    >
+                      {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Invoice Date</label>
-              <input 
-                type="date" 
-                value={invoiceDate}
-                onChange={(e) => setInvoiceDate(e.target.value)}
-                className="input-dark w-full" 
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Due Date</label>
-              <input 
-                type="date" 
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="input-dark w-full" 
-              />
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Invoice Date</label>
+                <input 
+                  type="date" 
+                  value={invoiceDate}
+                  onChange={(e) => setInvoiceDate(e.target.value)}
+                  className="input-dark w-full" 
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Due Date</label>
+                <input 
+                  type="date" 
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="input-dark w-full" 
+                />
+              </div>
             </div>
           </div>
 

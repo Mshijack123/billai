@@ -4,6 +4,8 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 export interface ParsedInvoice {
   customer_name: string;
+  customer_phone?: string;
+  customer_address?: string;
   items: {
     description: string;
     qty: number;
@@ -28,7 +30,7 @@ export async function parseHindiPrompt(prompt: string, existingProducts?: { name
     ${productsContext}
     
     Rules:
-    1. Extract customer name.
+    1. Extract customer name, phone number, and address if available.
     2. Extract items with quantity, rate, and GST rate.
     3. If an item in the prompt matches an "Existing Product" listed above, use its rate and GST rate automatically if not explicitly overridden in the prompt.
     4. Extract payment status (paid, pending, or partial).
@@ -41,6 +43,75 @@ export async function parseHindiPrompt(prompt: string, existingProducts?: { name
         type: Type.OBJECT,
         properties: {
           customer_name: { type: Type.STRING },
+          customer_phone: { type: Type.STRING },
+          customer_address: { type: Type.STRING },
+          items: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                description: { type: Type.STRING },
+                qty: { type: Type.NUMBER },
+                rate: { type: Type.NUMBER },
+                gst_rate: { type: Type.NUMBER }
+              },
+              required: ["description", "qty", "rate", "gst_rate"]
+            }
+          },
+          payment_status: { type: Type.STRING, enum: ["paid", "pending", "partial"] },
+          paid_amount: { type: Type.NUMBER },
+          notes: { type: Type.STRING }
+        },
+        required: ["customer_name", "items", "payment_status"]
+      }
+    }
+  });
+
+  return JSON.parse(response.text || '{}');
+}
+
+export async function parseInvoiceImage(base64Image: string, mimeType: string, existingProducts?: { name: string, rate: number, gstRate: number }[]): Promise<ParsedInvoice> {
+  const productsContext = existingProducts && existingProducts.length > 0
+    ? `\n\nExisting Products (Use these prices and GST rates if items match):
+    ${existingProducts.map(p => `- ${p.name}: ₹${p.rate}, GST ${p.gstRate}%`).join('\n')}`
+    : '';
+
+  const imagePart = {
+    inlineData: {
+      mimeType: mimeType,
+      data: base64Image,
+    },
+  };
+
+  const response = await ai.models.generateContent({
+    model: "gemini-3-flash-preview",
+    contents: {
+      parts: [
+        imagePart,
+        {
+          text: `Extract invoice details from this image into a structured JSON format.
+          ${productsContext}
+          
+          Rules:
+          1. Extract customer name, phone number, and address if available.
+          2. Extract items with quantity, rate, and GST rate.
+          3. If an item in the image matches an "Existing Product" listed above, use its rate and GST rate automatically if not explicitly overridden in the image.
+          4. Extract payment status (paid, pending, or partial).
+          5. If status is 'partial', extract the 'paid_amount' if mentioned.
+          6. If multiple items, list them all.
+          7. Return ONLY the JSON object.
+          8. If some fields are not clearly visible, make a best guess or leave as empty/zero.`
+        }
+      ]
+    },
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          customer_name: { type: Type.STRING },
+          customer_phone: { type: Type.STRING },
+          customer_address: { type: Type.STRING },
           items: {
             type: Type.ARRAY,
             items: {

@@ -7,6 +7,7 @@ import {
   Edit3, 
   MoreVertical, 
   Plus,
+  Camera,
   FileText,
   ChevronLeft,
   ChevronRight,
@@ -42,6 +43,7 @@ const InvoicesPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const [aiInitialMode, setAiInitialMode] = useState<'text' | 'image'>('text');
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [autoDownload, setAutoDownload] = useState(false);
@@ -166,11 +168,12 @@ const InvoicesPage = () => {
     setIsManualModalOpen(true);
   };
 
-  const handleCreateAI = () => {
+  const handleCreateAI = (mode: 'text' | 'image' = 'text') => {
     if (!canCreateInvoice) {
       openPricing();
       return;
     }
+    setAiInitialMode(mode);
     setIsAIModalOpen(true);
   };
 
@@ -242,20 +245,26 @@ const InvoicesPage = () => {
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={handleCreateManual}
-            className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm font-bold hover:bg-white/10 transition-all flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" /> Manual
-          </button>
-          <button 
-            onClick={handleCreateAI}
-            className="btn-orange flex items-center justify-center gap-2"
-          >
-            <Plus className="w-5 h-5" /> Naya Invoice
-          </button>
-        </div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={handleCreateManual}
+              className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm font-bold hover:bg-white/10 transition-all flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" /> Manual
+            </button>
+            <button 
+              onClick={() => handleCreateAI('image')}
+              className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm font-bold hover:bg-white/10 transition-all flex items-center gap-2"
+            >
+              <Camera className="w-4 h-4" /> Scan Bill
+            </button>
+            <button 
+              onClick={() => handleCreateAI('text')}
+              className="btn-orange flex items-center justify-center gap-2"
+            >
+              <Plus className="w-5 h-5" /> Naya Invoice
+            </button>
+          </div>
       </div>
 
       {/* Summary Strip */}
@@ -515,6 +524,7 @@ const InvoicesPage = () => {
         onClose={() => setIsAIModalOpen(false)} 
         onSuccess={() => {}}
         onUpgrade={openPricing}
+        initialMode={aiInitialMode}
       />
 
       <ManualInvoiceModal 

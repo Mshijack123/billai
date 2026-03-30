@@ -86,6 +86,7 @@ export interface Invoice {
   customerGstin?: string;
   customerState?: string;
   customerAddress?: string;
+  customerPhone?: string;
   // Business details at the time of creation
   businessName?: string;
   businessAddress?: string;
