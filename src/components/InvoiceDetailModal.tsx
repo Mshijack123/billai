@@ -13,7 +13,9 @@ interface InvoiceDetailModalProps {
   invoice: Invoice | null;
   profile: UserProfile | null;
   autoDownload?: boolean;
+  autoShare?: boolean;
   onDownloadComplete?: () => void;
+  onShareComplete?: () => void;
   onDelete?: (id: string) => void;
 }
 
@@ -23,7 +25,9 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
   invoice, 
   profile,
   autoDownload,
+  autoShare,
   onDownloadComplete,
+  onShareComplete,
   onDelete
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -62,6 +66,16 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
     }
   }, [isOpen, autoDownload, invoice?.id]);
 
+  React.useEffect(() => {
+    if (isOpen && autoShare && invoice) {
+      const timer = setTimeout(() => {
+        handleWhatsAppShare();
+        if (onShareComplete) onShareComplete();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, autoShare, invoice?.id]);
+
   if (!isOpen || !invoice || !profile) return null;
 
   const gstBreakup = invoice.items.reduce((acc: Record<string, any>, item) => {
@@ -85,10 +99,69 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
     return acc;
   }, {});
 
-  const handleWhatsAppShare = () => {
+  const handleWhatsAppShare = async () => {
     if (!invoice || !profile) return;
     
-    // Create a detailed message for WhatsApp
+    const element = document.getElementById('invoice-paper');
+    if (element && navigator.share) {
+      setIsDownloading(true);
+      try {
+        // Wait for rendering
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        const imgData = await toPng(element, {
+          quality: 1.0,
+          pixelRatio: 2,
+          backgroundColor: '#ffffff',
+          style: {
+            transform: 'none',
+            scale: '1',
+            margin: '0',
+            position: 'relative',
+            boxShadow: 'none',
+            width: '1000px',
+            height: 'auto',
+            left: '0',
+            top: '0',
+            display: 'block',
+            visibility: 'visible',
+            opacity: '1'
+          }
+        });
+
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4',
+          compress: true
+        });
+
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const imgProps = pdf.getImageProperties(imgData);
+        const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+
+        const blob = pdf.output('blob');
+        const fileName = `Invoice-${invoice.invoiceNumber || invoice.id}.pdf`;
+        const file = new File([blob], fileName, { type: 'application/pdf' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: `Invoice ${invoice.invoiceNumber}`,
+            text: `Tax Invoice from ${profile.businessName}`,
+          });
+          setIsDownloading(false);
+          return;
+        }
+      } catch (error) {
+        console.error('Error sharing PDF:', error);
+      } finally {
+        setIsDownloading(false);
+      }
+    }
+
+    // Fallback to text message if PDF share fails or not supported
     const message = `*TAX INVOICE: ${invoice.invoiceNumber}*\n` +
       `--------------------------\n` +
       `*From:* ${profile.businessName}\n` +
@@ -442,7 +515,7 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
                 {/* Minimal Header */}
                 <div className="flex justify-between items-start mb-16 border-b-2 border-black pb-8">
                   <div>
-                    <h1 className="text-4xl font-light tracking-widest uppercase mb-4">{invoice.businessName || profile.businessName || profile.displayName || 'Your Business Name'}</h1>
+                    <h1 className="text-4xl font-light tracking-widest uppercase mb-4">{invoice.shopName || invoice.businessName || profile.shopName || profile.businessName || profile.displayName || 'Your Business Name'}</h1>
                     <div className="text-[10px] text-gray-500 space-y-1">
                       <p>{invoice.businessAddress || profile.address || 'Your Business Address'}</p>
                       <p>GSTIN: {invoice.businessGstin || profile.gstin || 'N/A'}</p>
@@ -574,7 +647,7 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
               <div className="flex flex-col h-full border-4 border-double theme-border p-4">
                 {/* Classic Header */}
                 <div className="text-center mb-10 border-b theme-border pb-6">
-                  <h1 className="text-3xl font-bold uppercase mb-2">{invoice.businessName || profile.businessName || profile.displayName || 'Your Business Name'}</h1>
+                  <h1 className="text-3xl font-bold uppercase mb-2">{invoice.shopName || invoice.businessName || profile.shopName || profile.businessName || profile.displayName || 'Your Business Name'}</h1>
                   <p className="text-sm text-gray-600">{invoice.businessAddress || profile.address || 'Your Business Address'}</p>
                   <p className="text-xs text-gray-500 mt-1">GSTIN: {invoice.businessGstin || profile.gstin || 'N/A'} | Phone: {invoice.businessPhone || profile.phone || 'N/A'}</p>
                 </div>
@@ -697,7 +770,7 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
                       </div>
                     )}
                     <div>
-                      <h1 className="text-3xl font-bold uppercase tracking-tight mb-1">{invoice.businessName || profile.businessName || profile.displayName || 'Your Business Name'}</h1>
+                      <h1 className="text-3xl font-bold uppercase tracking-tight mb-1">{invoice.shopName || invoice.businessName || profile.shopName || profile.businessName || profile.displayName || 'Your Business Name'}</h1>
                       <p className="text-xs text-gray-600 max-w-[300px] leading-relaxed">{invoice.businessAddress || profile.address || 'Your Business Address'}</p>
                       <div className="mt-2 text-[10px] font-bold space-y-0.5">
                         <p>GSTIN: {invoice.businessGstin || profile.gstin || 'N/A'}</p>
@@ -892,7 +965,7 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
                       </div>
                     )}
                     <div>
-                      <h1 className="text-2xl font-bold mb-1 tracking-tight">{invoice.businessName || profile.businessName || profile.displayName || 'Your Business Name'}</h1>
+                      <h1 className="text-2xl font-bold mb-1 tracking-tight">{invoice.shopName || invoice.businessName || profile.shopName || profile.businessName || profile.displayName || 'Your Business Name'}</h1>
                       <p className="text-[11px] text-gray-500 max-w-[300px] leading-relaxed font-medium">{invoice.businessAddress || profile.address || 'Your Business Address'}</p>
                       <div className="mt-4 space-y-1">
                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">

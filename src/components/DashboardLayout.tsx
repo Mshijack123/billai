@@ -102,10 +102,35 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
     navItems.push({ to: '/admin', icon: Shield, label: 'Admin Panel' });
   }
 
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      setIsRefreshing(false);
+      window.location.reload();
+    }, 1000);
+  };
+
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] flex transition-colors duration-300 overflow-x-hidden">
+    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] flex transition-colors duration-300 overflow-x-hidden safe-left safe-right">
+      {/* Pull to refresh indicator */}
+      <AnimatePresence>
+        {isRefreshing && (
+          <motion.div 
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 20, opacity: 1 }}
+            exit={{ y: -50, opacity: 0 }}
+            className="fixed top-0 left-1/2 -translate-x-1/2 z-[100] bg-orange-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-xs font-bold"
+          >
+            <Sparkles className="w-4 h-4 animate-spin" />
+            Refreshing...
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Sidebar Desktop */}
-      <aside className="hidden lg:flex flex-col w-64 border-r border-[var(--border-color)] bg-[var(--bg-secondary)] p-6">
+      <aside className="hidden lg:flex flex-col w-64 border-r border-[var(--border-color)] bg-[var(--bg-secondary)] p-6 safe-top safe-bottom">
         <div className="flex items-center gap-3 mb-10 px-2 group cursor-pointer">
           <div className="w-9 h-9 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-orange-500/20 group-hover:rotate-12 transition-transform">B</div>
           <span className="text-xl font-bold tracking-tighter">Bill<span className="text-orange-500">AI</span></span>
@@ -152,7 +177,8 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              className="fixed top-0 left-0 bottom-0 w-72 bg-[var(--bg-secondary)] z-50 p-6 lg:hidden"
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed top-0 left-0 bottom-0 w-72 bg-[var(--bg-secondary)] z-50 p-6 lg:hidden safe-top safe-bottom"
             >
               <div className="flex items-center justify-between mb-10">
                 <div className="flex items-center gap-3 group cursor-pointer">
@@ -179,13 +205,19 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-[var(--border-color)] bg-[var(--bg-primary)]/80 backdrop-blur-md sticky top-0 z-30 px-4 lg:px-8 flex items-center justify-between transition-colors duration-300">
+        <header className="h-16 border-b border-[var(--border-color)] bg-[var(--bg-primary)]/80 backdrop-blur-md sticky top-0 z-30 px-4 lg:px-8 flex items-center justify-between transition-colors duration-300 safe-top">
           <div className="flex items-center gap-4">
             <button 
-              className="lg:hidden p-2 hover:bg-[var(--bg-secondary)] rounded-xl transition-colors active:scale-95" 
+              className="lg:hidden p-2 hover:bg-[var(--bg-secondary)] rounded-xl transition-colors active:scale-95 tappable" 
               onClick={() => setIsSidebarOpen(true)}
             >
               <Menu className="w-6 h-6 text-[var(--text-secondary)]" />
+            </button>
+            <button 
+              className="lg:hidden p-2 hover:bg-[var(--bg-secondary)] rounded-xl transition-colors active:scale-95 tappable" 
+              onClick={handleRefresh}
+            >
+              <Sparkles className="w-5 h-5 text-orange-500" />
             </button>
             <div className="hidden sm:block">
               <h1 className="text-lg font-bold capitalize tracking-tight">{location.pathname.split('/')[1] || 'Dashboard'}</h1>
@@ -214,20 +246,20 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
             {/* Theme Toggle */}
             <button 
               onClick={toggleTheme}
-              className="p-2.5 text-[var(--text-secondary)] hover:text-orange-500 transition-all rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] hover:border-orange-500/30 hover:shadow-lg hover:shadow-orange-500/5 active:scale-95"
+              className="p-2.5 text-[var(--text-secondary)] hover:text-orange-500 transition-all rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] hover:border-orange-500/30 hover:shadow-lg hover:shadow-orange-500/5 active:scale-95 tappable"
               title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             >
               {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
 
-            <button className="relative p-2.5 text-[var(--text-secondary)] hover:text-orange-500 transition-all rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] hover:border-orange-500/30 hover:shadow-lg hover:shadow-orange-500/5 active:scale-95">
+            <button className="relative p-2.5 text-[var(--text-secondary)] hover:text-orange-500 transition-all rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] hover:border-orange-500/30 hover:shadow-lg hover:shadow-orange-500/5 active:scale-95 tappable">
               <Bell className="w-5 h-5" />
               <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-orange-500 rounded-full border-2 border-[var(--bg-secondary)]"></span>
             </button>
             <div className="relative" ref={dropdownRef}>
               <button 
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-2 sm:gap-3 hover:bg-[var(--bg-secondary)] p-1 sm:p-1.5 sm:pr-4 rounded-full border border-transparent hover:border-[var(--border-color)] transition-all active:scale-95 group"
+                className="flex items-center gap-2 sm:gap-3 hover:bg-[var(--bg-secondary)] p-1 sm:p-1.5 sm:pr-4 rounded-full border border-transparent hover:border-[var(--border-color)] transition-all active:scale-95 group tappable"
               >
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-bold group-hover:text-orange-500 transition-colors">{profile?.displayName}</p>
@@ -279,10 +311,10 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
         </div>
 
         {/* FAB for Mobile */}
-        <div className="lg:hidden fixed bottom-24 right-6 z-40">
+        <div className="lg:hidden fixed bottom-24 right-6 z-40 safe-bottom">
           <button 
             onClick={() => setIsQuickActionOpen(true)}
-            className="w-14 h-14 bg-orange-500 text-white rounded-2xl shadow-2xl shadow-orange-500/40 flex items-center justify-center active:scale-90 transition-transform border border-white/20"
+            className="w-14 h-14 bg-orange-500 text-white rounded-2xl shadow-2xl shadow-orange-500/40 flex items-center justify-center active:scale-90 transition-transform border border-white/20 tappable"
           >
             <PlusCircle className="w-8 h-8" />
           </button>
@@ -303,7 +335,8 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
                 initial={{ y: '100%' }}
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
-                className="fixed bottom-0 left-0 right-0 bg-[var(--bg-secondary)] z-[70] p-6 pb-10 rounded-t-[2.5rem] lg:hidden border-t border-[var(--border-color)]"
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="fixed bottom-0 left-0 right-0 bg-[var(--bg-secondary)] z-[70] p-6 pb-10 rounded-t-[2.5rem] lg:hidden border-t border-[var(--border-color)] safe-bottom"
               >
                 <div className="w-12 h-1.5 bg-[var(--border-color)] rounded-full mx-auto mb-8" />
                 <h3 className="text-xl font-bold mb-6 text-center">Quick Actions</h3>
@@ -313,7 +346,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
                       setIsQuickActionOpen(false);
                       navigate('/invoices');
                     }}
-                    className="flex flex-col items-center gap-3 p-5 sm:p-6 bg-[var(--bg-primary)]/5 rounded-3xl border border-[var(--border-color)] active:scale-95 transition-transform"
+                    className="flex flex-col items-center gap-3 p-5 sm:p-6 bg-[var(--bg-primary)]/5 rounded-3xl border border-[var(--border-color)] active:scale-95 transition-transform tappable"
                   >
                     <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center">
                       <Sparkles className="w-6 h-6 text-orange-500" />
@@ -325,7 +358,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
                       setIsQuickActionOpen(false);
                       navigate('/invoices');
                     }}
-                    className="flex flex-col items-center gap-3 p-5 sm:p-6 bg-[var(--bg-primary)]/5 rounded-3xl border border-[var(--border-color)] active:scale-95 transition-transform"
+                    className="flex flex-col items-center gap-3 p-5 sm:p-6 bg-[var(--bg-primary)]/5 rounded-3xl border border-[var(--border-color)] active:scale-95 transition-transform tappable"
                   >
                     <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center">
                       <FileText className="w-6 h-6 text-blue-500" />
@@ -337,7 +370,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
                       setIsQuickActionOpen(false);
                       navigate('/customers');
                     }}
-                    className="flex flex-col items-center gap-3 p-5 sm:p-6 bg-[var(--bg-primary)]/5 rounded-3xl border border-[var(--border-color)] active:scale-95 transition-transform"
+                    className="flex flex-col items-center gap-3 p-5 sm:p-6 bg-[var(--bg-primary)]/5 rounded-3xl border border-[var(--border-color)] active:scale-95 transition-transform tappable"
                   >
                     <div className="w-12 h-12 bg-green-500/10 rounded-2xl flex items-center justify-center">
                       <Users className="w-6 h-6 text-green-500" />
@@ -349,7 +382,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
                       setIsQuickActionOpen(false);
                       navigate('/items');
                     }}
-                    className="flex flex-col items-center gap-3 p-5 sm:p-6 bg-[var(--bg-primary)]/5 rounded-3xl border border-[var(--border-color)] active:scale-95 transition-transform"
+                    className="flex flex-col items-center gap-3 p-5 sm:p-6 bg-[var(--bg-primary)]/5 rounded-3xl border border-[var(--border-color)] active:scale-95 transition-transform tappable"
                   >
                     <div className="w-12 h-12 bg-teal-500/10 rounded-2xl flex items-center justify-center">
                       <Package className="w-6 h-6 text-teal-500" />
@@ -363,7 +396,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
         </AnimatePresence>
 
         {/* Bottom Navigation for Mobile */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-2">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-2 safe-bottom">
           <div className="bg-[var(--bg-secondary)]/90 backdrop-blur-xl border border-[var(--border-color)] rounded-2xl shadow-2xl flex items-center justify-around px-2 py-1">
             {navItems.slice(0, 5).map((item) => (
               <BottomNavItem 

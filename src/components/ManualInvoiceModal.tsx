@@ -33,6 +33,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
   const [newCustomerName, setNewCustomerName] = useState('');
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
   const [newCustomerAddress, setNewCustomerAddress] = useState('');
+  const [customerGstin, setCustomerGstin] = useState('');
   const [customerState, setCustomerState] = useState('Rajasthan');
   const [invoiceDate, setInvoiceDate] = useState(getLocalDateString());
   
@@ -187,12 +188,14 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
       let customerName = '';
       let customerPhone = '';
       let customerAddress = '';
+      let customerGstinValue = '';
 
       if (selectedCustomerId) {
         const customer = customers.find(c => c.id === selectedCustomerId);
         customerName = customer?.name || 'Unknown';
         customerPhone = customer?.phone || '';
         customerAddress = customer?.address || '';
+        customerGstinValue = customer?.gstin || '';
       } else {
         // Create new customer
         const newCustomerRef = await addDoc(collection(db, 'customers'), {
@@ -200,13 +203,15 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
           name: newCustomerName,
           phone: newCustomerPhone,
           address: newCustomerAddress,
+          gstin: customerGstin,
           state: customerState,
-          createdAt: new Date().toISOString()
+          createdAt: serverTimestamp()
         });
         customerId = newCustomerRef.id;
         customerName = newCustomerName;
         customerPhone = newCustomerPhone;
         customerAddress = newCustomerAddress;
+        customerGstinValue = customerGstin;
       }
 
       const gstType = calculateGSTType(profile.state || 'Rajasthan', customerState);
@@ -222,12 +227,13 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
         businessId: profile.uid,
         customerId,
         customerName,
-        customerGstin: '', // Could be added if needed
+        customerGstin: customerGstinValue,
         customerState: customerState,
         customerAddress,
         customerPhone,
         // Save business details at the time of creation
         businessName: profile.businessName || profile.displayName || '',
+        shopName: profile.shopName || '',
         businessAddress: profile.address || '',
         businessGstin: profile.gstin || '',
         businessPhone: profile.phone || '',
@@ -266,9 +272,9 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
 
       onSuccess();
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       handleFirestoreError(err, OperationType.WRITE, 'invoices');
-      alert('Failed to save invoice');
+      alert('Invoice save karne mein dikkat aayi: ' + (err.message || 'Unknown error'));
     } finally {
       setIsSaving(false);
     }
@@ -336,15 +342,27 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
 
               {!selectedCustomerId && (
                 <div className="space-y-4 p-4 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)]">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">New Customer Name *</label>
-                    <input 
-                      type="text"
-                      value={newCustomerName}
-                      onChange={(e) => setNewCustomerName(e.target.value)}
-                      placeholder="Enter customer name..."
-                      className="input-dark w-full"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">New Customer Name *</label>
+                      <input 
+                        type="text"
+                        value={newCustomerName}
+                        onChange={(e) => setNewCustomerName(e.target.value)}
+                        placeholder="Enter customer name..."
+                        className="input-dark w-full"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Customer GSTIN (Optional)</label>
+                      <input 
+                        type="text"
+                        value={customerGstin}
+                        onChange={(e) => setCustomerGstin(e.target.value)}
+                        placeholder="GST Number..."
+                        className="input-dark w-full"
+                      />
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -572,7 +590,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
           </button>
           <button 
             onClick={handleSave}
-            disabled={isSaving || !selectedCustomerId}
+            disabled={isSaving || (!selectedCustomerId && !newCustomerName)}
             className="flex-[2] btn-orange h-12 sm:h-14 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base font-bold shadow-lg shadow-orange-500/20"
           >
             {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}

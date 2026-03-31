@@ -112,8 +112,63 @@ async function startServer() {
     res.status(200).send("OK");
   });
 
+  app.post("/api/admin/delete-user", async (req, res) => {
+    const { targetUserId, adminId } = req.body;
+
+    if (!targetUserId || !adminId) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    try {
+      // Verify the requester is an admin
+      const adminDoc = await db.collection("users").doc(adminId).get();
+      const adminData = adminDoc.data();
+      
+      const isDefaultAdmin = adminData?.email === "mshijacknew@gmail.com";
+      const isAdminRole = adminData?.role === "admin";
+
+      if (!isDefaultAdmin && !isAdminRole) {
+        return res.status(403).json({ error: "Unauthorized. Admin access required." });
+      }
+
+      // 1. Delete all invoices
+      const invoicesSnapshot = await db.collection("invoices").where("businessId", "==", targetUserId).get();
+      const invoiceBatch = db.batch();
+      invoicesSnapshot.docs.forEach(doc => invoiceBatch.delete(doc.ref));
+      await invoiceBatch.commit();
+
+      // 2. Delete all customers
+      const customersSnapshot = await db.collection("customers").where("businessId", "==", targetUserId).get();
+      const customerBatch = db.batch();
+      customersSnapshot.docs.forEach(doc => customerBatch.delete(doc.ref));
+      await customerBatch.commit();
+
+      // 3. Delete all products
+      const productsSnapshot = await db.collection("products").where("businessId", "==", targetUserId).get();
+      const productBatch = db.batch();
+      productsSnapshot.docs.forEach(doc => productBatch.delete(doc.ref));
+      await productBatch.commit();
+
+      // 4. Delete user document
+      await db.collection("users").doc(targetUserId).delete();
+
+      // 5. Delete user from Firebase Auth
+      await admin.auth().deleteUser(targetUserId);
+
+      res.json({ success: true, message: "User and all associated data deleted successfully." });
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ 
+        error: "Failed to delete user",
+        details: error.message
+      });
+    }
+  });
+
   // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
+  const isProd = process.env.NODE_ENV === "production";
+  
+  if (!isProd) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
@@ -124,7 +179,12 @@ async function startServer() {
     app.get("*", async (req, res, next) => {
       const url = req.originalUrl;
       try {
-        let template = fs.readFileSync(path.resolve(__dirname, "index.html"), "utf-8");
+        // Use process.cwd() to ensure we're looking in the project root
+        const indexPath = path.join(process.cwd(), "index.html");
+        if (!fs.existsSync(indexPath)) {
+          return next();
+        }
+        let template = fs.readFileSync(indexPath, "utf-8");
         template = await vite.transformIndexHtml(url, template);
         res.status(200).set({ "Content-Type": "text/html" }).end(template);
       } catch (e) {
@@ -134,9 +194,16 @@ async function startServer() {
     });
   } else {
     const distPath = path.join(process.cwd(), "dist");
+    const indexPath = path.join(distPath, "index.html");
+    
     app.use(express.static(distPath));
+    
     app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(404).send("Not Found - Build the app first. If you are in development, set NODE_ENV to development.");
+      }
     });
   }
 

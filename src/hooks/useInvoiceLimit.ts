@@ -28,7 +28,7 @@ export const useInvoiceLimit = () => {
     return () => unsubscribe();
   }, [profile]);
 
-  const isPro = profile?.plan === 'pro';
+  const isPro = profile?.plan === 'pro' && (!profile.planExpiry || new Date(profile.planExpiry) > new Date());
   const canCreateInvoice = isPro || invoiceCount < LIMIT;
 
   return {

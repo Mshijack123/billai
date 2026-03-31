@@ -15,7 +15,7 @@ import {
 import { useFirebase } from '../components/FirebaseProvider';
 import { usePricing } from '../components/PricingContext';
 import { useInvoiceLimit } from '../hooks/useInvoiceLimit';
-import { db, collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, handleFirestoreError, OperationType } from '../firebase';
+import { db, collection, query, where, onSnapshot, addDoc, deleteDoc, doc, updateDoc, handleFirestoreError, OperationType, serverTimestamp } from '../firebase';
 import { Product } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
@@ -62,7 +62,15 @@ const ItemsPage = () => {
     const q = query(collection(db, 'products'), where('businessId', '==', profile.uid));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-      setItems(docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      
+      const getTime = (val: any) => {
+        if (!val) return Date.now();
+        if (typeof val === 'string') return new Date(val).getTime();
+        if (val && typeof val === 'object' && 'toMillis' in val) return val.toMillis();
+        return new Date(val).getTime();
+      };
+
+      setItems(docs.sort((a, b) => getTime(b.createdAt) - getTime(a.createdAt)));
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'products');
     });
@@ -88,7 +96,7 @@ const ItemsPage = () => {
           businessId: profile.uid,
           rate: Number(formData.rate) || 0,
           gstRate: Number(formData.gstRate),
-          createdAt: new Date().toISOString()
+          createdAt: serverTimestamp()
         });
       }
       setShowSuccess(true);

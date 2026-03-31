@@ -8,6 +8,7 @@ export interface UserProfile {
   email: string;
   displayName: string;
   businessName?: string;
+  shopName?: string;
   gstin?: string;
   address?: string;
   state?: string;
@@ -41,6 +42,7 @@ export interface UserProfile {
     monthlyReports: boolean;
   };
   plan: 'free' | 'pro';
+  planExpiry?: string;
   role?: 'admin' | 'user';
   createdAt: string;
 }
@@ -89,6 +91,7 @@ export interface Invoice {
   customerPhone?: string;
   // Business details at the time of creation
   businessName?: string;
+  shopName?: string;
   businessAddress?: string;
   businessGstin?: string;
   businessPhone?: string;

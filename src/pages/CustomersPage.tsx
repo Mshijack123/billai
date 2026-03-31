@@ -154,7 +154,15 @@ const CustomersPage = () => {
     const q = query(collection(db, 'customers'), where('businessId', '==', profile.uid));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer));
-      setCustomers(docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      
+      const getTime = (val: any) => {
+        if (!val) return Date.now();
+        if (typeof val === 'string') return new Date(val).getTime();
+        if (val && typeof val === 'object' && 'toMillis' in val) return val.toMillis();
+        return new Date(val).getTime();
+      };
+
+      setCustomers(docs.sort((a, b) => getTime(b.createdAt) - getTime(a.createdAt)));
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'customers');
     });
@@ -189,7 +197,15 @@ const CustomersPage = () => {
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice));
-      setCustomerInvoices(docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      
+      const getTime = (val: any) => {
+        if (!val) return Date.now();
+        if (typeof val === 'string') return new Date(val).getTime();
+        if (val && typeof val === 'object' && 'toMillis' in val) return val.toMillis();
+        return new Date(val).getTime();
+      };
+
+      setCustomerInvoices(docs.sort((a, b) => getTime(b.createdAt) - getTime(a.createdAt)));
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'invoices');
     });
@@ -212,7 +228,7 @@ const CustomersPage = () => {
         await addDoc(collection(db, 'customers'), {
           ...formData,
           businessId: profile.uid,
-          createdAt: new Date().toISOString()
+          createdAt: serverTimestamp()
         });
       }
       setIsAddModalOpen(false);

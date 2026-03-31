@@ -219,6 +219,7 @@ export const AIInvoiceModal: React.FC<AIInvoiceModalProps> = ({ isOpen, onClose,
         customerPhone: matchedCustomer?.phone || parsedData.customer_phone || '',
         // Save business details at the time of creation
         businessName: profile.businessName || profile.displayName || '',
+        shopName: profile.shopName || '',
         businessAddress: profile.address || '',
         businessGstin: profile.gstin || '',
         businessPhone: profile.phone || '',

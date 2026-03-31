@@ -38,6 +38,7 @@ service cloud.firestore {
         request.resource.data.plan == resource.data.plan && 
         request.resource.data.role == resource.data.role
       );
+      allow delete: if isAdmin();
     }
 
     // Customers
@@ -45,7 +46,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (resource.data.businessId == request.auth.uid || isAdmin());
       allow create: if isNewDocOwner();
       allow update: if isDocOwner() && request.resource.data.businessId == resource.data.businessId;
-      allow delete: if isDocOwner();
+      allow delete: if isDocOwner() || isAdmin();
     }
 
     // Invoices
@@ -53,7 +54,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (resource.data.businessId == request.auth.uid || isAdmin());
       allow create: if isNewDocOwner();
       allow update: if isDocOwner() && request.resource.data.businessId == resource.data.businessId;
-      allow delete: if isDocOwner();
+      allow delete: if isDocOwner() || isAdmin();
     }
 
     // Products
@@ -61,7 +62,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (resource.data.businessId == request.auth.uid || isAdmin());
       allow create: if isNewDocOwner();
       allow update: if isDocOwner() && request.resource.data.businessId == resource.data.businessId;
-      allow delete: if isDocOwner();
+      allow delete: if isDocOwner() || isAdmin();
     }
   }
 }

@@ -17,16 +17,19 @@ import {
   AlertCircle,
   Download,
   FileSpreadsheet,
+  Trash2,
   TrendingUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { InvoiceDetailModal } from '../components/InvoiceDetailModal';
+import axios from 'axios';
 
 export default function AdminPanel() {
   const { profile: adminProfile } = useFirebase();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deletingUser, setDeletingUser] = useState<string | null>(null);
   const [globalStats, setGlobalStats] = useState({
     totalRevenue: 0,
     totalGST: 0,
@@ -41,6 +44,7 @@ export default function AdminPanel() {
   const [loadingUserData, setLoadingUserData] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [autoDownload, setAutoDownload] = useState(false);
+  const [autoShare, setAutoShare] = useState(false);
 
   const downloadCSV = (data: any[], filename: string) => {
     if (data.length === 0) return;
@@ -205,6 +209,29 @@ export default function AdminPanel() {
     }
   };
 
+  const handleDeleteUser = async (targetUserId: string) => {
+    if (!adminProfile) return;
+    if (!window.confirm("Are you sure you want to PERMANENTLY delete this user and ALL their data? This cannot be undone.")) return;
+
+    setDeletingUser(targetUserId);
+    try {
+      const response = await axios.post('/api/admin/delete-user', {
+        targetUserId,
+        adminId: adminProfile.uid
+      });
+
+      if (response.data.success) {
+        setUsers(users.filter(u => u.uid !== targetUserId));
+        alert("User deleted successfully.");
+      }
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      alert(error.response?.data?.error || "Failed to delete user.");
+    } finally {
+      setDeletingUser(null);
+    }
+  };
+
   const filteredUsers = users.filter(u => 
     u.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -366,6 +393,20 @@ export default function AdminPanel() {
                             >
                               <ExternalLink className="w-4 h-4" />
                             </button>
+                            {user.email !== "mshijacknew@gmail.com" && (
+                              <button 
+                                onClick={() => handleDeleteUser(user.uid)}
+                                disabled={deletingUser === user.uid}
+                                className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
+                                title="Delete User Permanently"
+                              >
+                                {deletingUser === user.uid ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4" />
+                                )}
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -397,6 +438,23 @@ export default function AdminPanel() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
+                {selectedUser.email !== "mshijacknew@gmail.com" && (
+                  <button 
+                    onClick={() => {
+                      handleDeleteUser(selectedUser.uid);
+                      setSelectedUser(null);
+                    }}
+                    disabled={deletingUser === selectedUser.uid}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs font-bold hover:bg-red-500/20 transition-all disabled:opacity-50"
+                  >
+                    {deletingUser === selectedUser.uid ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                    Delete User
+                  </button>
+                )}
                 <button 
                   onClick={exportGSTReport}
                   disabled={userData.invoices.length === 0}
@@ -553,11 +611,14 @@ export default function AdminPanel() {
         onClose={() => {
           setSelectedInvoice(null);
           setAutoDownload(false);
+          setAutoShare(false);
         }}
         invoice={selectedInvoice}
         profile={selectedUser}
         autoDownload={autoDownload}
+        autoShare={autoShare}
         onDownloadComplete={() => setAutoDownload(false)}
+        onShareComplete={() => setAutoShare(false)}
       />
     </div>
   );

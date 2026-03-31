@@ -1,0 +1,26 @@
+{
+  "name": "BillAI - Hindi AI Billing",
+  "short_name": "BillAI",
+  "description": "India's first Hindi AI-powered GST billing software.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#060810",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "https://ais-dev-yb5fluhtgaudilx6gx2qpe-640843016426.run.app/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "https://picsum.photos/seed/billai/192/192",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://picsum.photos/seed/billai/512/512",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}

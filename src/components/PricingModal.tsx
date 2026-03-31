@@ -53,7 +53,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
               <div className="w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center">
                 <Check className="w-4 h-4 text-green-500" />
               </div>
-              <span className="text-sm font-medium">Unlimited Invoice Creation</span>
+              <span className="text-sm font-medium">Unlimited Invoices (1 Month)</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center">
@@ -76,7 +76,10 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
           </div>
 
           <div className="pt-4">
-            <div className="text-4xl font-bold mb-1">₹499<span className="text-lg text-[var(--text-secondary)] font-normal">/lifetime</span></div>
+            <div className="flex items-center justify-center gap-3 mb-1">
+              <span className="text-xl text-[var(--text-secondary)] line-through">₹199</span>
+              <div className="text-4xl font-bold">₹99<span className="text-lg text-[var(--text-secondary)] font-normal">/month</span></div>
+            </div>
             <p className="text-xs text-[var(--text-secondary)] mb-6">Contact admin for manual payment & activation</p>
             
             <button 

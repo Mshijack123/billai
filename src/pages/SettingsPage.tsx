@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { INDIAN_STATES } from '../lib/gst-calculator';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import AdminPanel from './AdminPanel';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -29,13 +30,15 @@ const SettingsPage = () => {
   const { profile } = useFirebase();
   const { invoiceCount, limit, remaining } = useInvoiceLimit();
   const { openPricing } = usePricing();
-  const [activeTab, setActiveTab] = useState<'profile' | 'invoice' | 'notifications' | 'billing' | 'security'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'invoice' | 'notifications' | 'billing' | 'security' | 'admin'>('profile');
+  const isAdmin = profile?.role === 'admin' || profile?.email === 'mshijacknew@gmail.com';
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     businessName: '',
+    shopName: '',
     displayName: '',
     email: '',
     phone: '',
@@ -76,6 +79,7 @@ const SettingsPage = () => {
     if (profile) {
       setFormData({
         businessName: profile.businessName || '',
+        shopName: profile.shopName || '',
         displayName: profile.displayName || '',
         email: profile.email || '',
         phone: profile.phone || '',
@@ -138,6 +142,7 @@ const SettingsPage = () => {
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'billing', label: 'Billing & Usage', icon: CreditCard },
     { id: 'security', label: 'Security', icon: Shield },
+    ...(isAdmin ? [{ id: 'admin', label: 'Admin Panel', icon: Shield }] : []),
   ];
 
   return (
@@ -189,13 +194,65 @@ const SettingsPage = () => {
 
               <form onSubmit={handleSave} className="space-y-8">
                 <div className="flex items-center gap-6 mb-10">
-                  <div className="w-24 h-24 rounded-[2rem] bg-orange-500/10 border-2 border-dashed border-orange-500/30 flex flex-col items-center justify-center text-orange-500 cursor-pointer hover:bg-orange-500/20 transition-all group">
-                    <Upload className="w-6 h-6 mb-1 group-hover:scale-110 transition-transform" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Logo</span>
+                  <div 
+                    onClick={() => document.getElementById('logo-upload')?.click()}
+                    className="w-24 h-24 rounded-[2rem] bg-orange-500/10 border-2 border-dashed border-orange-500/30 flex flex-col items-center justify-center text-orange-500 cursor-pointer hover:bg-orange-500/20 transition-all group overflow-hidden"
+                  >
+                    {formData.invoiceSettings.logoUrl ? (
+                      <img 
+                        src={formData.invoiceSettings.logoUrl} 
+                        alt="Logo" 
+                        className="w-full h-full object-contain p-2"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <>
+                        <Upload className="w-6 h-6 mb-1 group-hover:scale-110 transition-transform" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">Logo</span>
+                      </>
+                    )}
+                    <input 
+                      id="logo-upload"
+                      type="file" 
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          if (file.size > 2 * 1024 * 1024) {
+                            setError('Logo size 2MB se kam honi chaiye');
+                            return;
+                          }
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setFormData({
+                              ...formData,
+                              invoiceSettings: {
+                                ...formData.invoiceSettings,
+                                logoUrl: reader.result as string
+                              }
+                            });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
                   </div>
                   <div>
                     <h4 className="font-bold mb-1">Business Logo</h4>
                     <p className="text-xs text-gray-500">PNG or JPG. Max 2MB.</p>
+                    {formData.invoiceSettings.logoUrl && (
+                      <button 
+                        type="button"
+                        onClick={() => setFormData({
+                          ...formData,
+                          invoiceSettings: { ...formData.invoiceSettings, logoUrl: '' }
+                        })}
+                        className="text-[10px] text-red-500 font-bold uppercase tracking-widest mt-2 hover:underline"
+                      >
+                        Remove Logo
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -208,6 +265,16 @@ const SettingsPage = () => {
                       value={formData.businessName}
                       onChange={(e) => setFormData({...formData, businessName: e.target.value})}
                       placeholder="Gupta Shoes" 
+                      className="input-dark w-full" 
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Shop Name (Optional)</label>
+                    <input 
+                      type="text" 
+                      value={formData.shopName}
+                      onChange={(e) => setFormData({...formData, shopName: e.target.value})}
+                      placeholder="Gupta Shoes & Co." 
                       className="input-dark w-full" 
                     />
                   </div>
@@ -406,8 +473,12 @@ const SettingsPage = () => {
               <div className="glass p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] border border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 md:gap-8">
                 <div className="text-center md:text-left">
                   <div className="bg-orange-500/10 text-orange-500 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest inline-block mb-4">Current Plan</div>
-                  <h2 className="text-3xl md:text-4xl font-display font-bold mb-2">FREE PLAN</h2>
-                  <p className="text-gray-400">20 invoices per month</p>
+                  <h2 className="text-3xl md:text-4xl font-display font-bold mb-2">{profile?.plan === 'pro' ? 'PRO PLAN' : 'FREE PLAN'}</h2>
+                  <p className="text-gray-400">
+                    {profile?.plan === 'pro' 
+                      ? `Unlimited invoices until ${profile.planExpiry ? new Date(profile.planExpiry).toLocaleDateString() : 'next month'}` 
+                      : '20 invoices per month'}
+                  </p>
                 </div>
                 <div className="flex-1 max-w-xs w-full">
                   <div className="flex justify-between text-xs font-bold mb-2">
@@ -454,8 +525,11 @@ const SettingsPage = () => {
 
                   <div className="flex flex-col sm:flex-row items-center gap-6">
                     <div className="text-center sm:text-left">
-                      <p className="text-4xl font-display font-bold">₹499 <span className="text-lg text-gray-500 font-normal">/lifetime</span></p>
-                      <p className="text-[10px] text-gray-600 uppercase tracking-widest font-bold">One-time payment</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg text-gray-500 line-through">₹199</span>
+                        <p className="text-4xl font-display font-bold">₹99 <span className="text-lg text-gray-500 font-normal">/month</span></p>
+                      </div>
+                      <p className="text-[10px] text-gray-600 uppercase tracking-widest font-bold">Priority Support Included</p>
                     </div>
                     <button onClick={openPricing} className="btn-orange px-10">Pro upgrade karo →</button>
                   </div>
@@ -673,6 +747,17 @@ const SettingsPage = () => {
           )}
 
 
+
+          {activeTab === 'admin' && isAdmin && (
+            <motion.div
+              key="admin"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <AdminPanel />
+            </motion.div>
+          )}
 
           {activeTab === 'security' && (
             <motion.div
