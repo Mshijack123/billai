@@ -179,22 +179,27 @@ async function startServer() {
     app.get("*", async (req, res, next) => {
       const url = req.originalUrl;
       try {
-        // Use process.cwd() to ensure we're looking in the project root
-        const indexPath = path.join(process.cwd(), "index.html");
+        // Use path.resolve with __dirname for more reliable path resolution
+        const indexPath = path.resolve(__dirname, "index.html");
+        
         if (!fs.existsSync(indexPath)) {
+          console.error("index.html not found at:", indexPath);
           return next();
         }
+        
         let template = fs.readFileSync(indexPath, "utf-8");
         template = await vite.transformIndexHtml(url, template);
         res.status(200).set({ "Content-Type": "text/html" }).end(template);
       } catch (e) {
-        vite.ssrFixStacktrace(e as Error);
+        if (vite) {
+          vite.ssrFixStacktrace(e as Error);
+        }
         next(e);
       }
     });
   } else {
-    const distPath = path.join(process.cwd(), "dist");
-    const indexPath = path.join(distPath, "index.html");
+    const distPath = path.resolve(__dirname, "dist");
+    const indexPath = path.resolve(distPath, "index.html");
     
     app.use(express.static(distPath));
     

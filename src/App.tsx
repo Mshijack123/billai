@@ -62,8 +62,9 @@ export default function App() {
             <Router>
               <React.Suspense fallback={<div className="min-h-screen bg-[#060810] flex items-center justify-center text-orange-500">Loading...</div>}>
                 <Routes>
-                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
                   <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+                  <Route path="/Logon" element={<Navigate to="/login" />} />
                   
                   <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
