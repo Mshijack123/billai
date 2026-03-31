@@ -50,6 +50,9 @@ const InvoicesPage = () => {
   const [autoDownload, setAutoDownload] = useState(false);
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   useEffect(() => {
     if (!profile) return;
 
@@ -79,7 +82,14 @@ const InvoicesPage = () => {
     }
     
     setFilteredInvoices(result);
+    setCurrentPage(1); // Reset to first page on filter change
   }, [searchTerm, statusFilter, invoices]);
+
+  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
+  const paginatedInvoices = filteredInvoices.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const toggleSelectAll = () => {
     if (selectedInvoices.length === filteredInvoices.length) {
@@ -226,61 +236,85 @@ const InvoicesPage = () => {
       )}
 
       {/* Top Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="flex-1 flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-[var(--text-secondary)] absolute left-4 top-1/2 -translate-y-1/2" />
-            <input 
-              type="text" 
-              placeholder="Invoice ya customer dhundo..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-dark w-full pl-12"
-            />
-          </div>
-          <div className="flex gap-4">
-            <div className="relative">
-              <Filter className="w-4 h-4 text-[var(--text-secondary)] absolute left-4 top-1/2 -translate-y-1/2" />
-              <select 
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="input-dark pl-12 pr-10 appearance-none cursor-pointer"
-              >
-                <option value="all">All Status</option>
-                <option value="paid">Paid</option>
-                <option value="pending">Pending</option>
-                <option value="partial">Partial</option>
-              </select>
+      <div className="flex flex-col gap-4 sm:gap-6">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-[var(--text-secondary)] absolute left-4 top-1/2 -translate-y-1/2" />
+              <input 
+                type="text" 
+                placeholder="Invoice ya customer dhundo..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="input-dark w-full pl-11 py-3 text-sm"
+              />
             </div>
-            <button 
-              onClick={handleCSVExport}
-              className="input-dark flex items-center gap-2 hover:bg-white/10 transition-colors"
-            >
-              <Download className="w-4 h-4 text-[var(--text-secondary)]" />
-              <span className="text-sm font-medium">CSV Export</span>
-            </button>
+            <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+              <div className="relative flex-shrink-0 min-w-[140px]">
+                <Filter className="w-4 h-4 text-[var(--text-secondary)] absolute left-4 top-1/2 -translate-y-1/2" />
+                <select 
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="input-dark pl-11 pr-10 py-3 appearance-none cursor-pointer text-sm w-full"
+                >
+                  <option value="all">All Status</option>
+                  <option value="paid">Paid</option>
+                  <option value="pending">Pending</option>
+                  <option value="partial">Partial</option>
+                </select>
+              </div>
+              <button 
+                onClick={handleCSVExport}
+                className="input-dark flex items-center gap-2 hover:bg-white/10 transition-colors px-5 py-3 flex-shrink-0"
+              >
+                <Download className="w-4 h-4 text-[var(--text-secondary)]" />
+                <span className="text-sm font-medium">Export</span>
+              </button>
+            </div>
           </div>
         </div>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={handleCreateManual}
-              className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm font-bold hover:bg-white/10 transition-all flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" /> Manual
-            </button>
-            <button 
-              onClick={() => handleCreateAI('image')}
-              className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm font-bold hover:bg-white/10 transition-all flex items-center gap-2"
-            >
-              <Camera className="w-4 h-4" /> Scan Bill
-            </button>
-            <button 
-              onClick={() => handleCreateAI('text')}
-              className="btn-orange flex items-center justify-center gap-2"
-            >
-              <Plus className="w-5 h-5" /> Naya Invoice
-            </button>
-          </div>
+        
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar lg:hidden">
+          <button 
+            onClick={handleCreateManual}
+            className="px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-xs font-bold hover:bg-[var(--bg-primary)]/5 transition-all flex items-center gap-2 whitespace-nowrap active:scale-95"
+          >
+            <Plus className="w-4 h-4" /> Manual
+          </button>
+          <button 
+            onClick={() => handleCreateAI('image')}
+            className="px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl text-xs font-bold hover:bg-[var(--bg-primary)]/5 transition-all flex items-center gap-2 whitespace-nowrap active:scale-95"
+          >
+            <Camera className="w-4 h-4" /> Scan Bill
+          </button>
+          <button 
+            onClick={() => handleCreateAI('text')}
+            className="flex-1 px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2 whitespace-nowrap active:scale-95"
+          >
+            <Plus className="w-4 h-4" /> Naya Invoice
+          </button>
+        </div>
+
+        <div className="hidden lg:flex items-center gap-3 justify-end">
+          <button 
+            onClick={handleCreateManual}
+            className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm font-bold hover:bg-white/10 transition-all flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" /> Manual
+          </button>
+          <button 
+            onClick={() => handleCreateAI('image')}
+            className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm font-bold hover:bg-white/10 transition-all flex items-center gap-2"
+          >
+            <Camera className="w-4 h-4" /> Scan Bill
+          </button>
+          <button 
+            onClick={() => handleCreateAI('text')}
+            className="btn-orange flex items-center justify-center gap-2"
+          >
+            <Plus className="w-5 h-5" /> Naya Invoice
+          </button>
+        </div>
       </div>
 
       {/* Summary Strip */}
@@ -352,7 +386,7 @@ const InvoicesPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-color)]">
-              {filteredInvoices.map((inv) => (
+              {paginatedInvoices.map((inv) => (
                 <tr key={inv.id} className="hover:bg-[var(--bg-secondary)] transition-colors group">
                   <td className="px-8 py-4">
                     <input 
@@ -438,16 +472,19 @@ const InvoicesPage = () => {
 
         {/* Mobile Card View */}
         <div className="md:hidden divide-y divide-[var(--border-color)]">
-          {filteredInvoices.map((inv) => (
-            <div key={inv.id} className="p-6 space-y-4 active:bg-[var(--bg-secondary)] transition-colors">
+          {paginatedInvoices.map((inv) => (
+            <div key={inv.id} className="p-5 space-y-4 active:bg-[var(--bg-secondary)] transition-colors">
               <div className="flex justify-between items-start">
-                <div onClick={() => setSelectedInvoice(inv)}>
-                  <p className="text-xs font-mono text-[var(--text-secondary)] mb-1">{inv.invoiceNumber}</p>
-                  <h4 className="font-bold text-lg">{inv.customerName}</h4>
-                  <p className="text-xs text-[var(--text-secondary)]">{new Date(inv.date).toLocaleDateString()}</p>
+                <div onClick={() => setSelectedInvoice(inv)} className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-[10px] font-mono text-[var(--text-secondary)]">{inv.invoiceNumber}</p>
+                    <div className="w-1 h-1 rounded-full bg-[var(--border-color)]" />
+                    <p className="text-[10px] text-[var(--text-secondary)] font-bold">{new Date(inv.date).toLocaleDateString()}</p>
+                  </div>
+                  <h4 className="font-bold text-base text-[var(--text-primary)] leading-tight">{inv.customerName}</h4>
                 </div>
                 <span className={cn(
-                  "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
+                  "px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider",
                   inv.status === 'paid' ? "bg-green-500/10 text-green-500" : 
                   inv.status === 'pending' ? "bg-amber-500/10 text-amber-500" : 
                   "bg-blue-500/10 text-blue-500"
@@ -456,37 +493,37 @@ const InvoicesPage = () => {
                 </span>
               </div>
               
-              <div className="flex justify-between items-end">
+              <div className="flex justify-between items-center pt-1">
                 <div>
-                  <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold">Total Amount</p>
-                  <p className="text-xl font-bold font-mono text-orange-500">₹{inv.total.toLocaleString()}</p>
+                  <p className="text-[9px] text-[var(--text-secondary)] uppercase tracking-widest font-bold mb-0.5">Amount</p>
+                  <p className="text-lg font-bold font-mono text-orange-500">₹{inv.total.toLocaleString()}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button 
                     onClick={() => handleWhatsAppShare(inv)}
-                    className="p-3 bg-green-500/10 text-green-500 rounded-xl"
+                    className="w-10 h-10 flex items-center justify-center bg-green-500/10 text-green-500 rounded-xl active:scale-90 transition-transform"
                   >
-                    <Share2 className="w-5 h-5" />
+                    <Share2 className="w-4 h-4" />
                   </button>
                   <button 
                     onClick={() => setSelectedInvoice(inv)}
-                    className="p-3 bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded-xl"
+                    className="w-10 h-10 flex items-center justify-center bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded-xl active:scale-90 transition-transform"
                   >
-                    <Eye className="w-5 h-5" />
+                    <Eye className="w-4 h-4" />
                   </button>
                   {inv.status !== 'paid' && (
                     <button 
                       onClick={() => handleMarkAsPaid(inv.id)}
-                      className="p-3 bg-green-500/10 text-green-500 rounded-xl"
+                      className="w-10 h-10 flex items-center justify-center bg-green-500/10 text-green-500 rounded-xl active:scale-90 transition-transform"
                     >
-                      <Check className="w-5 h-5" />
+                      <Check className="w-4 h-4" />
                     </button>
                   )}
                   <button 
                     onClick={() => handleDeleteInvoice(inv.id)}
-                    className="p-3 bg-red-500/10 text-red-500 rounded-xl"
+                    className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-500 rounded-xl active:scale-90 transition-transform"
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -502,14 +539,59 @@ const InvoicesPage = () => {
         )}
 
         {/* Pagination */}
-        <div className="p-8 flex items-center justify-between border-t border-[var(--border-color)] bg-[var(--bg-secondary)]/50">
-          <p className="text-xs text-[var(--text-secondary)]">Showing {filteredInvoices.length} of {invoices.length} invoices</p>
-          <div className="flex items-center gap-2">
-            <button className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-primary)] disabled:opacity-50" disabled>
+        <div className="p-6 sm:p-8 flex items-center justify-between border-t border-[var(--border-color)] bg-[var(--bg-secondary)]/50">
+          <p className="text-[10px] sm:text-xs text-[var(--text-secondary)] font-medium">
+            Showing <span className="text-[var(--text-primary)]">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="text-[var(--text-primary)]">{Math.min(currentPage * itemsPerPage, filteredInvoices.length)}</span> of <span className="text-[var(--text-primary)]">{filteredInvoices.length}</span>
+          </p>
+          <div className="flex items-center gap-1.5">
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="p-2 rounded-xl border border-[var(--border-color)] hover:bg-[var(--bg-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <button className="w-8 h-8 rounded-lg bg-orange-500 text-white text-xs font-bold">1</button>
-            <button className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-primary)] disabled:opacity-50" disabled>
+            
+            <div className="flex items-center gap-1">
+              {[...Array(totalPages)].map((_, i) => {
+                const pageNum = i + 1;
+                // Show first, last, and pages around current
+                if (
+                  pageNum === 1 || 
+                  pageNum === totalPages || 
+                  (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                ) {
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={cn(
+                        "w-8 h-8 rounded-xl text-[10px] font-bold transition-all",
+                        currentPage === pageNum 
+                          ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20" 
+                          : "hover:bg-[var(--bg-primary)]/10 text-[var(--text-secondary)]"
+                      )}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                }
+                // Show ellipsis
+                if (
+                  (pageNum === 2 && currentPage > 3) || 
+                  (pageNum === totalPages - 1 && currentPage < totalPages - 2)
+                ) {
+                  return <span key={pageNum} className="text-[var(--text-secondary)] text-[10px]">...</span>;
+                }
+                return null;
+              })}
+            </div>
+
+            <button 
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className="p-2 rounded-xl border border-[var(--border-color)] hover:bg-[var(--bg-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>

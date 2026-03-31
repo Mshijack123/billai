@@ -271,75 +271,96 @@ const ReportsPage = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="relative">
-            <Calendar className="w-4 h-4 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2" />
-            <select 
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              className="input-dark pl-12 pr-10 appearance-none cursor-pointer"
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center justify-between lg:hidden">
+          <h1 className="text-2xl font-bold">Reports</h1>
+          <div className="flex gap-2">
+            <button 
+              onClick={handlePDFExport}
+              disabled={isExportingPDF}
+              className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center disabled:opacity-50"
             >
-              {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((m, i) => (
-                <option key={m} value={i}>{m}</option>
-              ))}
+              <Download className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={handleCSVExport}
+              className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center"
+            >
+              <FileText className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
+            <div className="relative flex-shrink-0">
+              <Calendar className="w-4 h-4 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2" />
+              <select 
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                className="input-dark pl-12 pr-10 appearance-none cursor-pointer text-sm"
+              >
+                {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((m, i) => (
+                  <option key={m} value={i}>{m}</option>
+                ))}
+              </select>
+            </div>
+            <select 
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="input-dark appearance-none cursor-pointer text-sm flex-shrink-0"
+            >
+              {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+
+            <div className="h-8 w-px bg-white/5 mx-1 flex-shrink-0" />
+
+            <select 
+              value={gstTypeFilter}
+              onChange={(e) => setGstTypeFilter(e.target.value as any)}
+              className="input-dark text-xs font-bold appearance-none cursor-pointer flex-shrink-0"
+            >
+              <option value="ALL">All GST Types</option>
+              <option value="CGST_SGST">Intrastate</option>
+              <option value="IGST">Interstate</option>
+            </select>
+
+            <select 
+              value={customerTypeFilter}
+              onChange={(e) => setCustomerTypeFilter(e.target.value as any)}
+              className="input-dark text-xs font-bold appearance-none cursor-pointer flex-shrink-0"
+            >
+              <option value="ALL">All Customers</option>
+              <option value="B2B">B2B</option>
+              <option value="B2C">B2C</option>
+            </select>
+
+            <select 
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="input-dark text-xs font-bold appearance-none cursor-pointer flex-shrink-0"
+            >
+              <option value="ALL">All Status</option>
+              <option value="paid">Paid</option>
+              <option value="pending">Pending</option>
             </select>
           </div>
-          <select 
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-            className="input-dark appearance-none cursor-pointer"
-          >
-            {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
-
-          <div className="h-8 w-px bg-white/5 mx-2 hidden sm:block" />
-
-          <select 
-            value={gstTypeFilter}
-            onChange={(e) => setGstTypeFilter(e.target.value as any)}
-            className="input-dark text-xs font-bold appearance-none cursor-pointer"
-          >
-            <option value="ALL">All GST Types</option>
-            <option value="CGST_SGST">Intrastate (CGST/SGST)</option>
-            <option value="IGST">Interstate (IGST)</option>
-          </select>
-
-          <select 
-            value={customerTypeFilter}
-            onChange={(e) => setCustomerTypeFilter(e.target.value as any)}
-            className="input-dark text-xs font-bold appearance-none cursor-pointer"
-          >
-            <option value="ALL">All Customers</option>
-            <option value="B2B">B2B (GSTIN)</option>
-            <option value="B2C">B2C (No GSTIN)</option>
-          </select>
-
-          <select 
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="input-dark text-xs font-bold appearance-none cursor-pointer"
-          >
-            <option value="ALL">All Status</option>
-            <option value="paid">Paid</option>
-            <option value="pending">Pending</option>
-            <option value="partial">Partial</option>
-          </select>
-        </div>
-        <div className="flex gap-4">
-          <button 
-            onClick={handlePDFExport}
-            disabled={isExportingPDF}
-            className="px-6 py-3 border border-white/10 rounded-xl text-sm font-bold hover:bg-white/5 transition-all flex items-center gap-2 disabled:opacity-50"
-          >
-            <Download className="w-4 h-4" /> {isExportingPDF ? 'Exporting...' : 'PDF Export'}
-          </button>
-          <button 
-            onClick={handleCSVExport}
-            className="px-6 py-3 border border-white/10 rounded-xl text-sm font-bold hover:bg-white/5 transition-all flex items-center gap-2"
-          >
-            <FileText className="w-4 h-4" /> CSV Export
-          </button>
+          
+          <div className="hidden lg:flex gap-4">
+            <button 
+              onClick={handlePDFExport}
+              disabled={isExportingPDF}
+              className="px-6 py-3 border border-white/10 rounded-xl text-sm font-bold hover:bg-white/5 transition-all flex items-center gap-2 disabled:opacity-50"
+            >
+              <Download className="w-4 h-4" /> {isExportingPDF ? 'Exporting...' : 'PDF Export'}
+            </button>
+            <button 
+              onClick={handleCSVExport}
+              className="px-6 py-3 border border-white/10 rounded-xl text-sm font-bold hover:bg-white/5 transition-all flex items-center gap-2"
+            >
+              <FileText className="w-4 h-4" /> CSV Export
+            </button>
+          </div>
         </div>
       </div>
 
@@ -360,35 +381,62 @@ const ReportsPage = () => {
           #report-content .border-blue-500\\/20 { border-color: rgba(59, 130, 246, 0.2) !important; }
           #report-content .text-blue-500 { color: #3b82f6 !important; }
         `}</style>
-        {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass p-8 rounded-[2rem] border border-white/5">
-          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Total Taxable Value</p>
-          <p className="text-3xl font-display font-bold mb-2">₹{stats.taxableValue.toLocaleString()}</p>
-          <p className="text-xs text-gray-600">Is mahine ka taxable turnover</p>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+        <div className="glass p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] border border-white/5">
+          <p className="text-[8px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1 sm:mb-2">Taxable Value</p>
+          <p className="text-xl sm:text-3xl font-display font-bold mb-1 sm:mb-2">₹{stats.taxableValue.toLocaleString()}</p>
+          <p className="text-[10px] sm:text-xs text-gray-600">Is mahine ka taxable turnover</p>
         </div>
-        <div className="glass p-8 rounded-[2rem] border border-white/5">
-          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Total GST Collected</p>
-          <p className="text-3xl font-display font-bold mb-2">₹{stats.totalGst.toLocaleString()}</p>
-          <div className="flex gap-4 text-[10px] font-bold">
+        <div className="glass p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] border border-white/5">
+          <p className="text-[8px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1 sm:mb-2">GST Collected</p>
+          <p className="text-xl sm:text-3xl font-display font-bold mb-1 sm:mb-2">₹{stats.totalGst.toLocaleString()}</p>
+          <div className="flex gap-3 sm:gap-4 text-[8px] sm:text-[10px] font-bold">
             <span className="text-orange-500">CGST ₹{stats.cgst.toLocaleString()}</span>
             <span className="text-green-500">SGST ₹{stats.sgst.toLocaleString()}</span>
           </div>
         </div>
-        <div className="glass p-8 rounded-[2rem] border border-white/5">
-          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">IGST Collected</p>
-          <p className="text-3xl font-display font-bold mb-2 text-purple-500">₹{stats.igst.toLocaleString()}</p>
-          <p className="text-xs text-gray-600">Interstate sales</p>
+        <div className="glass p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] border border-white/5 sm:col-span-2 lg:col-span-1">
+          <p className="text-[8px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1 sm:mb-2">IGST Collected</p>
+          <p className="text-xl sm:text-3xl font-display font-bold mb-1 sm:mb-2 text-purple-500">₹{stats.igst.toLocaleString()}</p>
+          <p className="text-[10px] sm:text-xs text-gray-600">Interstate sales</p>
         </div>
       </div>
 
       {/* Breakup Table */}
-      <div className="glass rounded-[2.5rem] border border-white/5 overflow-hidden">
-        <div className="p-8 border-b border-white/5">
-          <h3 className="text-xl font-bold">GST Rate-wise Breakup</h3>
-          <p className="text-xs text-gray-500">January 2025 summary</p>
+      <div className="glass rounded-[1.5rem] sm:rounded-[2.5rem] border border-white/5 overflow-hidden">
+        <div className="p-5 sm:p-8 border-b border-white/5">
+          <h3 className="text-lg sm:text-xl font-bold">GST Rate-wise Breakup</h3>
+          <p className="text-[10px] sm:text-xs text-gray-500">Rate wise summary</p>
         </div>
-        <div className="overflow-x-auto">
+        
+        {/* Mobile View for Table */}
+        <div className="block sm:hidden divide-y divide-white/5">
+          {rateBreakup.map((row) => (
+            <div key={row.rate} className="p-5 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-orange-500">{row.rate}% GST Rate</span>
+                <span className="text-sm font-mono font-bold">₹{row.total.toLocaleString()}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-[10px]">
+                <div className="space-y-1">
+                  <p className="text-gray-500 uppercase tracking-wider">Taxable</p>
+                  <p className="font-mono">₹{row.taxable.toLocaleString()}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-gray-500 uppercase tracking-wider">CGST/SGST</p>
+                  <p className="font-mono text-orange-500">₹{row.cgst.toLocaleString()} / ₹{row.sgst.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+          <div className="p-5 bg-white/5 flex justify-between items-center">
+            <span className="text-xs font-bold text-orange-500 uppercase tracking-widest">Grand Total</span>
+            <span className="text-base font-mono font-bold text-orange-500">₹{stats.totalGst.toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="text-[10px] text-gray-500 uppercase tracking-widest border-b border-white/5">
@@ -425,41 +473,41 @@ const ReportsPage = () => {
       </div>
 
       {/* Trend Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 glass p-8 rounded-[2.5rem] border border-white/5">
-          <h3 className="text-xl font-bold mb-8">Monthly GST Trend</h3>
-          <div className="h-80">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="lg:col-span-2 glass p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] border border-white/5">
+          <h3 className="text-lg sm:text-xl font-bold mb-6 lg:mb-8">Monthly GST Trend</h3>
+          <div className="h-56 sm:h-80">
             <Bar data={chartData} options={chartOptions} />
           </div>
         </div>
 
-        <div className="glass p-8 rounded-[2.5rem] border border-white/5 flex flex-col justify-between">
+        <div className="glass p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] border border-white/5 flex flex-col justify-between">
           <div>
-            <h3 className="text-xl font-bold mb-2">GSTR-1 Summary</h3>
-            <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl flex gap-3 text-blue-500 text-xs mb-6">
+            <h3 className="text-lg sm:text-xl font-bold mb-2">GSTR-1 Summary</h3>
+            <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl flex gap-3 text-blue-500 text-[10px] sm:text-xs mb-6">
               <Info className="w-5 h-5 flex-shrink-0" />
               <p>Ye data aapke GSTR-1 filing ke liye ready hai. Tax consultant ko share karo.</p>
             </div>
             
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">B2B Supplies</span>
-                <span className="font-bold">₹{b2bTotal.toLocaleString()}</span>
+                <span className="text-xs sm:text-sm text-gray-500">B2B Supplies</span>
+                <span className="font-bold text-sm sm:text-base">₹{b2bTotal.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">B2C Supplies</span>
-                <span className="font-bold">₹{b2cTotal.toLocaleString()}</span>
+                <span className="text-xs sm:text-sm text-gray-500">B2C Supplies</span>
+                <span className="font-bold text-sm sm:text-base">₹{b2cTotal.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">Total Invoices</span>
-                <span className="font-bold">{filteredInvoices.length}</span>
+                <span className="text-xs sm:text-sm text-gray-500">Total Invoices</span>
+                <span className="font-bold text-sm sm:text-base">{filteredInvoices.length}</span>
               </div>
             </div>
           </div>
 
           <button 
             onClick={handleCAExport}
-            className="btn-orange w-full flex items-center justify-center gap-2 mt-8"
+            className="btn-orange w-full flex items-center justify-center gap-2 mt-8 py-4 text-sm active:scale-95 transition-transform"
           >
             <Download className="w-5 h-5" /> Export for CA
           </button>

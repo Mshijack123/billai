@@ -51,10 +51,10 @@ const CustomerCard = ({
   return (
     <motion.div 
       whileHover={{ y: -5, borderColor: 'rgba(255, 92, 26, 0.3)' }}
-      className="glass p-6 rounded-[2rem] border border-white/5 transition-all group"
+      className="glass p-5 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] border border-white/5 transition-all group"
     >
-      <div className="flex justify-between items-start mb-6">
-        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-white text-lg", color)}>
+      <div className="flex justify-between items-start mb-4 sm:mb-6">
+        <div className={cn("w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center font-bold text-white text-base sm:text-lg", color)}>
           {initials}
         </div>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -70,17 +70,17 @@ const CustomerCard = ({
         </div>
       </div>
 
-      <h3 className="text-xl font-bold mb-1">{customer.name}</h3>
-      <div className="flex items-center gap-2 text-xs text-gray-500 mb-6">
+      <h3 className="text-lg sm:text-xl font-bold mb-1 truncate">{customer.name}</h3>
+      <div className="flex items-center gap-2 text-[10px] sm:text-xs text-gray-500 mb-4 sm:mb-6">
         <Phone className="w-3 h-3" /> {customer.phone}
       </div>
 
-      <div className="space-y-3 mb-6">
-        <div className="flex justify-between items-center text-xs">
+      <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
+        <div className="flex justify-between items-center text-[10px] sm:text-xs">
           <span className="text-gray-500">State</span>
           <span className="font-medium">{customer.state}</span>
         </div>
-        <div className="flex justify-between items-center text-xs">
+        <div className="flex justify-between items-center text-[10px] sm:text-xs">
           <span className="text-gray-500">Outstanding</span>
           <span className={cn("font-mono font-bold", outstanding > 0 ? "text-amber-500" : "text-green-500")}>
             ₹{outstanding.toLocaleString()}
@@ -91,11 +91,11 @@ const CustomerCard = ({
       <div className="flex gap-2">
         <button 
           onClick={onClick}
-          className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
+          className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95"
         >
           View History
         </button>
-        <button className="p-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 rounded-xl transition-all">
+        <button className="p-2.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 rounded-xl transition-all active:scale-95">
           <Plus className="w-5 h-5" />
         </button>
       </div>
@@ -281,36 +281,48 @@ const CustomersPage = () => {
   return (
     <div className="space-y-8">
       {/* Top Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2" />
-          <input 
-            type="text" 
-            placeholder="Customer dhundo..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input-dark w-full pl-12"
-          />
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between lg:hidden">
+          <h1 className="text-2xl font-bold">Customers</h1>
+          <button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="w-12 h-12 bg-orange-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/20 active:scale-90 transition-transform"
+          >
+            <Plus className="w-6 h-6" />
+          </button>
         </div>
-        <button 
-          onClick={() => setIsAddModalOpen(true)}
-          className="btn-orange flex items-center justify-center gap-2"
-        >
-          <Plus className="w-5 h-5" /> Customer Jodon
-        </button>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2" />
+            <input 
+              type="text" 
+              placeholder="Customer dhundo..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="input-dark w-full pl-11 py-3 text-sm"
+            />
+          </div>
+          <button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="hidden lg:flex btn-orange items-center justify-center gap-2"
+          >
+            <Plus className="w-5 h-5" /> Customer Jodon
+          </button>
+        </div>
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {[
-          { label: 'Total Customers', value: customers.length },
-          { label: 'Active This Month', value: activeThisMonth },
+          { label: 'Total', value: customers.length },
+          { label: 'Active', value: activeThisMonth },
           { label: 'Outstanding', value: `₹${totalOutstanding.toLocaleString()}`, color: 'text-amber-500' },
           { label: 'Avg Order', value: `₹${Math.round(avgOrderValue).toLocaleString()}` }
         ].map((stat, i) => (
-          <div key={i} className="glass p-4 rounded-2xl border border-white/5">
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">{stat.label}</p>
-            <p className={cn("text-xl font-bold", stat.color)}>{stat.value}</p>
+          <div key={i} className="glass p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-white/5">
+            <p className="text-[8px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-0.5 sm:mb-1">{stat.label}</p>
+            <p className={cn("text-base sm:text-xl font-bold", stat.color)}>{stat.value}</p>
           </div>
         ))}
       </div>
@@ -349,26 +361,26 @@ const CustomersPage = () => {
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
-              className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-[#0C1020] z-[70] p-8 shadow-2xl border-l border-white/5 overflow-y-auto"
+              className="fixed top-0 right-0 bottom-0 w-full lg:max-w-md bg-[#0C1020] z-[70] p-5 sm:p-6 lg:p-8 shadow-2xl border-l border-white/5 overflow-y-auto"
             >
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-2xl font-bold">Customer Details</h2>
-                <button onClick={() => setSelectedCustomer(null)} className="p-2 hover:bg-white/5 rounded-lg">
+              <div className="flex justify-between items-center mb-6 sm:mb-8">
+                <h2 className="text-xl lg:text-2xl font-bold">Customer Details</h2>
+                <button onClick={() => setSelectedCustomer(null)} className="p-2 hover:bg-white/5 rounded-lg active:scale-90 transition-transform">
                   <X className="w-6 h-6 text-gray-500" />
                 </button>
               </div>
 
-              <div className="flex flex-col items-center text-center mb-10">
-                <div className="w-24 h-24 rounded-[2rem] bg-orange-500 flex items-center justify-center font-bold text-white text-3xl mb-4 shadow-xl shadow-orange-500/20">
+              <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
+                <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-[1.5rem] sm:rounded-[2rem] bg-orange-500 flex items-center justify-center font-bold text-white text-2xl lg:text-3xl mb-4 shadow-xl shadow-orange-500/20">
                   {getInitials(selectedCustomer.name)}
                 </div>
-                <h3 className="text-2xl font-bold mb-1">{selectedCustomer.name}</h3>
+                <h3 className="text-xl lg:text-2xl font-bold mb-1">{selectedCustomer.name}</h3>
                 <p className="text-gray-500 text-sm mb-6">{selectedCustomer.phone}</p>
                 
-                <div className="flex gap-3">
+                <div className="flex gap-3 w-full lg:w-auto">
                   <button 
                     onClick={() => openEditModal(selectedCustomer)}
-                    className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold hover:bg-white/10 transition-all"
+                    className="flex-1 lg:flex-none px-5 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-bold hover:bg-white/10 transition-all active:scale-95"
                   >
                     Edit Details
                   </button>
@@ -378,14 +390,10 @@ const CustomersPage = () => {
                         openPricing();
                         return;
                       }
-                      // For now, redirect to invoices or open a modal? 
-                      // The app doesn't seem to have a direct "Create for this customer" modal here yet, 
-                      // but let's add the check anyway if the button exists.
-                      // Actually, let's see what the button does.
                     }}
-                    className="px-4 py-2 bg-orange-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-orange-500/20"
+                    className="flex-1 lg:flex-none px-5 py-3 bg-orange-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-orange-500/20 active:scale-95"
                   >
-                    Naya Invoice Banao
+                    Naya Invoice
                   </button>
                 </div>
               </div>
@@ -466,100 +474,100 @@ const CustomersPage = () => {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-lg bg-[#0C1020] border border-white/10 rounded-[2rem] p-8 shadow-2xl"
+              className="relative w-full h-full sm:h-auto sm:max-w-lg bg-[#0C1020] sm:border sm:border-white/10 sm:rounded-[2rem] p-6 sm:p-8 shadow-2xl flex flex-col"
             >
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-bold">{editingCustomer ? 'Customer Details Update Karein' : 'Naya Customer Jodon'}</h2>
+              <div className="flex justify-between items-center mb-6 sm:mb-8 flex-shrink-0">
+                <h2 className="text-xl sm:text-2xl font-bold">{editingCustomer ? 'Customer Update' : 'Naya Customer'}</h2>
                 <button 
                   onClick={() => {
                     setIsAddModalOpen(false);
                     setEditingCustomer(null);
                   }} 
-                  className="p-2 hover:bg-white/5 rounded-lg"
+                  className="p-2 hover:bg-white/5 rounded-lg active:scale-90 transition-transform"
                 >
                   <X className="w-6 h-6 text-gray-500" />
                 </button>
               </div>
 
-              <form onSubmit={handleAddCustomer} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <form onSubmit={handleAddCustomer} className="space-y-4 flex-1 overflow-y-auto no-scrollbar pb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Naam *</label>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Naam *</label>
                     <input 
                       required
                       type="text" 
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
                       placeholder="Ramesh Gupta" 
-                      className="input-dark w-full" 
+                      className="input-dark w-full py-3" 
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Phone *</label>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Phone *</label>
                     <input 
                       required
                       type="tel" 
                       value={formData.phone}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
                       placeholder="9876543210" 
-                      className="input-dark w-full" 
+                      className="input-dark w-full py-3" 
                     />
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Email</label>
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Email</label>
                   <input 
                     type="email" 
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                     placeholder="ramesh@example.com" 
-                    className="input-dark w-full" 
+                    className="input-dark w-full py-3" 
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Business Name</label>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Business Name</label>
                     <input 
                       type="text" 
                       value={formData.businessName}
                       onChange={(e) => setFormData({...formData, businessName: e.target.value})}
                       placeholder="Gupta Shoes" 
-                      className="input-dark w-full" 
+                      className="input-dark w-full py-3" 
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">GSTIN</label>
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">GSTIN</label>
                     <input 
                       type="text" 
                       value={formData.gstin}
                       onChange={(e) => setFormData({...formData, gstin: e.target.value})}
                       placeholder="08ABCDE1234F1Z5" 
-                      className="input-dark w-full" 
+                      className="input-dark w-full py-3" 
                     />
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">State *</label>
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">State *</label>
                   <select 
                     required
                     value={formData.state}
                     onChange={(e) => setFormData({...formData, state: e.target.value})}
-                    className="input-dark w-full appearance-none"
+                    className="input-dark w-full appearance-none py-3"
                   >
                     {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Address</label>
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider ml-1">Address</label>
                   <textarea 
                     value={formData.address}
                     onChange={(e) => setFormData({...formData, address: e.target.value})}
                     placeholder="Full address..." 
-                    className="input-dark w-full h-24 resize-none" 
+                    className="input-dark w-full h-24 resize-none py-3" 
                   />
                 </div>
 
-                <button type="submit" disabled={isSaving} className="btn-orange w-full mt-4">
+                <button type="submit" disabled={isSaving} className="btn-orange w-full mt-4 py-4 active:scale-95 transition-transform">
                   {isSaving ? 'Saving...' : (editingCustomer ? 'Update Karein' : 'Customer Save karo')}
                 </button>
               </form>

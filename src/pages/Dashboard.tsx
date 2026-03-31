@@ -61,31 +61,31 @@ import { useInvoiceLimit } from '../hooks/useInvoiceLimit';
 const StatCard = ({ title, value, label, trend, icon: Icon, color }: any) => (
   <motion.div 
     whileHover={{ y: -5, borderColor: 'rgba(255, 92, 26, 0.2)' }}
-    className="glass p-6 rounded-[2.5rem] border border-[var(--border-color)] transition-all relative overflow-hidden group"
+    className="glass p-3 sm:p-6 rounded-[1.5rem] sm:rounded-[2.5rem] border border-[var(--border-color)] transition-all relative overflow-hidden group"
   >
-    <div className={cn("absolute -right-4 -top-4 w-24 h-24 blur-3xl opacity-10 transition-opacity group-hover:opacity-20", color)} />
+    <div className={cn("absolute -right-4 -top-4 w-16 h-16 sm:w-24 sm:h-24 blur-2xl sm:blur-3xl opacity-10 transition-opacity group-hover:opacity-20", color)} />
     
-    <div className="flex justify-between items-start mb-6">
-      <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg", color)}>
-        <Icon className="w-6 h-6 text-white" />
+    <div className="flex justify-between items-start mb-2 sm:mb-6">
+      <div className={cn("w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center shadow-lg", color)}>
+        <Icon className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
       </div>
       <div className={cn(
-        "flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold", 
+        "flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-bold", 
         trend > 0 ? "bg-green-500/10 text-green-500" : "bg-amber-500/10 text-amber-500"
       )}>
-        {trend > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+        {trend > 0 ? <ArrowUpRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> : <ArrowDownRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
         {Math.abs(trend)}%
       </div>
     </div>
     
-    <div className="space-y-1">
-      <p className="text-xs text-[var(--text-secondary)] font-bold uppercase tracking-widest">{title}</p>
-      <p className="text-3xl font-display font-bold tracking-tight">{value}</p>
+    <div className="space-y-0.5 sm:space-y-1">
+      <p className="text-[8px] sm:text-xs text-[var(--text-secondary)] font-bold uppercase tracking-widest truncate">{title}</p>
+      <p className="text-lg sm:text-3xl font-display font-bold tracking-tight truncate">{value}</p>
     </div>
     
-    <div className="mt-4 pt-4 border-t border-[var(--border-color)] flex items-center justify-between">
-      <p className="text-[10px] text-[var(--text-secondary)] font-medium">{label}</p>
-      <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+    <div className="mt-2 sm:mt-4 pt-2 sm:pt-4 border-t border-[var(--border-color)] flex items-center justify-between">
+      <p className="text-[8px] sm:text-[10px] text-[var(--text-secondary)] font-medium truncate">{label}</p>
+      <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-orange-500 animate-pulse flex-shrink-0" />
     </div>
   </motion.div>
 );
@@ -300,35 +300,35 @@ const Dashboard = () => {
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <StatCard 
-          title="Total Revenue" 
+          title="Revenue" 
           value={`₹${stats.totalRevenue.toLocaleString()}`} 
-          label="Is mahine ki kamaai"
+          label="Total kamaai"
           trend={12}
           icon={TrendingUp}
           color="bg-orange-500"
         />
         <StatCard 
-          title="Pending Payments" 
+          title="Pending" 
           value={`₹${stats.pendingPayments.toLocaleString()}`} 
-          label="Abhi baaki hai"
+          label="Abhi baaki"
           trend={-5}
           icon={Clock}
           color="bg-amber-500"
         />
         <StatCard 
-          title="GST Payable" 
+          title="GST" 
           value={`₹${stats.gstPayable.toLocaleString()}`} 
-          label="Is quarter mein"
+          label="Payable"
           trend={8}
           icon={Receipt}
           color="bg-blue-500"
         />
         <StatCard 
-          title="Total Invoices" 
+          title="Invoices" 
           value={stats.totalInvoices} 
-          label="Is mahine banaye"
+          label="Total count"
           trend={15}
           icon={FileText}
           color="bg-teal-500"
@@ -338,51 +338,51 @@ const Dashboard = () => {
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Revenue Chart */}
-        <div className="lg:col-span-2 glass p-8 rounded-[2.5rem] border border-[var(--border-color)] relative overflow-hidden">
+        <div className="lg:col-span-2 glass p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-[var(--border-color)] relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full blur-[100px] -mr-32 -mt-32" />
           
           <div className="relative z-10">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
               <div>
-                <h3 className="text-xl font-bold">Revenue Trend</h3>
-                <p className="text-xs text-[var(--text-secondary)]">Monthly business performance overview</p>
+                <h3 className="text-lg sm:text-xl font-bold">Revenue Trend</h3>
+                <p className="text-[10px] sm:text-xs text-[var(--text-secondary)]">Monthly business performance overview</p>
               </div>
-              <div className="flex items-center gap-2 bg-[var(--bg-secondary)] p-1 rounded-xl border border-[var(--border-color)]">
-                <button className="px-4 py-1.5 rounded-lg bg-orange-500 text-white text-[10px] font-bold uppercase tracking-widest transition-all">Monthly</button>
-                <button className="px-4 py-1.5 rounded-lg hover:bg-[var(--bg-primary)]/5 text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest transition-all">Yearly</button>
+              <div className="flex items-center gap-2 bg-[var(--bg-secondary)] p-1 rounded-xl border border-[var(--border-color)] w-full sm:w-auto">
+                <button className="flex-1 sm:flex-none px-4 py-1.5 rounded-lg bg-orange-500 text-white text-[10px] font-bold uppercase tracking-widest transition-all">Monthly</button>
+                <button className="flex-1 sm:flex-none px-4 py-1.5 rounded-lg hover:bg-[var(--bg-primary)]/5 text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest transition-all">Yearly</button>
               </div>
             </div>
-            <div className="h-80 w-full">
+            <div className="h-64 sm:h-80 w-full">
               <Line data={chartData} options={chartOptions} />
             </div>
           </div>
         </div>
 
         {/* Quick Actions */}
-        <div className="space-y-6">
-          <div className="glass p-8 rounded-[2.5rem] border border-[var(--border-color)] flex flex-col gap-4 relative overflow-hidden group">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="glass p-5 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-[var(--border-color)] flex flex-col gap-4 relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             
-            <h3 className="text-xl font-bold mb-2 relative z-10">Quick Actions</h3>
+            <h3 className="text-base sm:text-xl font-bold mb-1 sm:mb-2 relative z-10">Quick Actions</h3>
             
             <button 
               onClick={() => canCreateInvoice ? setIsAIModalOpen(true) : openPricing()}
               className={cn(
-                "w-full p-6 bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl text-left group/btn transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-orange-500/20 relative overflow-hidden z-10",
+                "w-full p-4 sm:p-6 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl sm:rounded-3xl text-left group/btn transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-orange-500/20 relative overflow-hidden z-10",
                 !canCreateInvoice && "opacity-50 grayscale cursor-not-allowed"
               )}
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-16 -mt-16 group-hover/btn:scale-150 transition-transform duration-700" />
+              <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-white/10 rounded-full blur-2xl -mr-12 -mt-12 sm:-mr-16 sm:-mt-16 group-hover/btn:scale-150 transition-transform duration-700" />
               
               <div className="relative z-10">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-inner">
-                    <Plus className="w-6 h-6 text-white" />
+                <div className="flex justify-between items-start mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-md rounded-xl sm:rounded-2xl flex items-center justify-center shadow-inner">
+                    <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
-                  <Sparkles className="w-5 h-5 text-white/50 group-hover/btn:text-white group-hover/btn:rotate-12 transition-all" />
+                  <ArrowRight className="w-4 h-4 text-white/50 group-hover/btn:text-white group-hover/btn:translate-x-1 transition-all" />
                 </div>
-                <p className="text-xl font-bold text-white mb-1">AI Invoice</p>
-                <p className="text-xs text-white/70">Hindi mein type karke invoice banayein</p>
+                <p className="text-lg sm:text-xl font-bold text-white mb-0.5 sm:mb-1">AI Invoice</p>
+                <p className="text-[10px] sm:text-xs text-white/70">Hindi mein type karke banayein</p>
               </div>
             </button>
 
@@ -390,26 +390,26 @@ const Dashboard = () => {
               <button 
                 onClick={() => canCreateInvoice ? setIsManualModalOpen(true) : openPricing()}
                 className={cn(
-                  "p-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl text-left transition-all hover:bg-[var(--bg-primary)]/5 group/item",
+                  "p-3 sm:p-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl sm:rounded-2xl text-left transition-all hover:bg-[var(--bg-primary)]/5 group/item",
                   !canCreateInvoice && "opacity-50 grayscale cursor-not-allowed"
                 )}
               >
-                <div className="w-10 h-10 bg-[var(--bg-primary)]/5 rounded-xl flex items-center justify-center mb-3 group-hover/item:scale-110 transition-transform">
-                  <FileText className="w-5 h-5 text-[var(--text-secondary)] group-hover/item:text-orange-500 transition-colors" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[var(--bg-primary)]/5 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-3 group-hover/item:scale-110 transition-transform">
+                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--text-secondary)] group-hover/item:text-orange-500 transition-colors" />
                 </div>
-                <p className="text-xs font-bold">Manual</p>
-                <p className="text-[9px] text-[var(--text-secondary)]">Standard way</p>
+                <p className="text-[10px] sm:text-xs font-bold">Manual</p>
+                <p className="text-[8px] sm:text-[9px] text-[var(--text-secondary)]">Standard way</p>
               </button>
 
               <Link 
                 to="/customers?add=true"
-                className="p-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl text-left hover:bg-[var(--bg-primary)]/5 group/item relative z-10"
+                className="p-3 sm:p-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl sm:rounded-2xl text-left hover:bg-[var(--bg-primary)]/5 group/item relative z-10"
               >
-                <div className="w-10 h-10 bg-[var(--bg-primary)]/5 rounded-xl flex items-center justify-center mb-3 group-hover/item:scale-110 transition-transform">
-                  <Plus className="w-5 h-5 text-[var(--text-secondary)] group-hover/item:text-orange-500 transition-colors" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[var(--bg-primary)]/5 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-3 group-hover/item:scale-110 transition-transform">
+                  <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--text-secondary)] group-hover/item:text-orange-500 transition-colors" />
                 </div>
-                <p className="text-xs font-bold">Customer</p>
-                <p className="text-[9px] text-[var(--text-secondary)]">Add new client</p>
+                <p className="text-[10px] sm:text-xs font-bold">Customer</p>
+                <p className="text-[8px] sm:text-[9px] text-[var(--text-secondary)]">Add new client</p>
               </Link>
             </div>
           </div>
@@ -510,15 +510,18 @@ const Dashboard = () => {
         {/* Mobile Card View */}
         <div className="md:hidden divide-y divide-[var(--border-color)]">
           {invoices.slice(0, 5).map((inv) => (
-            <div key={inv.id} className="p-6 space-y-4 active:bg-[var(--bg-primary)]/5 transition-colors">
+            <div key={inv.id} className="p-5 space-y-4 active:bg-[var(--bg-primary)]/5 transition-colors">
               <div className="flex justify-between items-start">
-                <div onClick={() => setSelectedInvoice(inv)}>
-                  <p className="text-xs font-mono text-[var(--text-secondary)] mb-1">{inv.invoiceNumber}</p>
-                  <h4 className="font-bold text-lg">{inv.customerName}</h4>
-                  <p className="text-xs text-[var(--text-secondary)]">{new Date(inv.date).toLocaleDateString()}</p>
+                <div onClick={() => setSelectedInvoice(inv)} className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-[10px] font-mono text-[var(--text-secondary)]">{inv.invoiceNumber}</p>
+                    <div className="w-1 h-1 rounded-full bg-[var(--border-color)]" />
+                    <p className="text-[10px] text-[var(--text-secondary)] font-bold">{new Date(inv.date).toLocaleDateString()}</p>
+                  </div>
+                  <h4 className="font-bold text-base text-[var(--text-primary)] leading-tight">{inv.customerName}</h4>
                 </div>
                 <span className={cn(
-                  "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
+                  "px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider",
                   inv.status === 'paid' ? "bg-green-500/10 text-green-500" : 
                   inv.status === 'pending' ? "bg-amber-500/10 text-amber-500" : 
                   "bg-blue-500/10 text-blue-500"
@@ -527,23 +530,23 @@ const Dashboard = () => {
                 </span>
               </div>
               
-              <div className="flex justify-between items-end">
+              <div className="flex justify-between items-center pt-1">
                 <div>
-                  <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-bold">Total Amount</p>
-                  <p className="text-xl font-bold font-mono text-orange-500">₹{inv.total.toLocaleString()}</p>
+                  <p className="text-[9px] text-[var(--text-secondary)] uppercase tracking-widest font-bold mb-0.5">Amount</p>
+                  <p className="text-lg font-bold font-mono text-orange-500">₹{inv.total.toLocaleString()}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button 
                     onClick={() => handleWhatsAppShare(inv)}
-                    className="p-3 bg-green-500/10 text-green-500 rounded-xl"
+                    className="w-10 h-10 flex items-center justify-center bg-green-500/10 text-green-500 rounded-xl active:scale-90 transition-transform"
                   >
-                    <Share2 className="w-5 h-5" />
+                    <Share2 className="w-4 h-4" />
                   </button>
                   <button 
                     onClick={() => setSelectedInvoice(inv)}
-                    className="p-3 bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded-xl"
+                    className="w-10 h-10 flex items-center justify-center bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded-xl active:scale-90 transition-transform"
                   >
-                    <Eye className="w-5 h-5" />
+                    <Eye className="w-4 h-4" />
                   </button>
                 </div>
               </div>

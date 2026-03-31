@@ -147,35 +147,47 @@ const ItemsPage = () => {
   return (
     <div className="space-y-8">
       {/* Top Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <AnimatePresence>
-          {showSuccess && (
-            <motion.div 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] bg-green-500 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-2"
-            >
-              <IndianRupee className="w-5 h-5" /> Item save ho gaya!
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2" />
-          <input 
-            type="text" 
-            placeholder="Item dhundo (Naam ya HSN)..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input-dark w-full pl-12"
-          />
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between lg:hidden">
+          <h1 className="text-2xl font-bold">Items</h1>
+          <button 
+            onClick={() => openModal()}
+            className="w-10 h-10 bg-orange-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20"
+          >
+            <Plus className="w-6 h-6" />
+          </button>
         </div>
-        <button 
-          onClick={() => openModal()}
-          className="btn-orange flex items-center justify-center gap-2"
-        >
-          <Plus className="w-5 h-5" /> Naya Item Jodon
-        </button>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <AnimatePresence>
+            {showSuccess && (
+              <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] bg-green-500 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-2"
+              >
+                <IndianRupee className="w-5 h-5" /> Item save ho gaya!
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2" />
+            <input 
+              type="text" 
+              placeholder="Item dhundo (Naam ya HSN)..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="input-dark w-full pl-12 py-3"
+            />
+          </div>
+          <button 
+            onClick={() => openModal()}
+            className="hidden lg:flex btn-orange items-center justify-center gap-2"
+          >
+            <Plus className="w-5 h-5" /> Naya Item Jodon
+          </button>
+        </div>
       </div>
 
       {/* Items Grid */}

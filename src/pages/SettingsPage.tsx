@@ -141,31 +141,31 @@ const SettingsPage = () => {
   ];
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8">
+    <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
       {/* Sub-nav */}
-      <aside className="lg:w-64 space-y-2">
+      <aside className="lg:w-64 flex lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible no-scrollbar pb-2 lg:pb-0 -mx-4 px-4 lg:mx-0 lg:px-0">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
             className={cn(
-              "w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group",
+              "flex-shrink-0 lg:w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group whitespace-nowrap",
               activeTab === tab.id 
                 ? "bg-orange-500/10 text-orange-500 border border-orange-500/20" 
-                : "text-gray-400 hover:bg-white/5 hover:text-white"
+                : "text-gray-400 hover:bg-white/5 hover:text-white border border-transparent"
             )}
           >
             <div className="flex items-center gap-3">
               <tab.icon className={cn("w-5 h-5", activeTab === tab.id ? "text-orange-500" : "text-gray-400 group-hover:text-white")} />
               <span className="font-medium text-sm">{tab.label}</span>
             </div>
-            <ChevronRight className={cn("w-4 h-4 transition-transform", activeTab === tab.id ? "rotate-90" : "")} />
+            <ChevronRight className={cn("hidden lg:block w-4 h-4 transition-transform", activeTab === tab.id ? "rotate-90" : "")} />
           </button>
         ))}
       </aside>
 
       {/* Content Area */}
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <AnimatePresence mode="wait">
           {activeTab === 'profile' && (
             <motion.div
@@ -173,15 +173,15 @@ const SettingsPage = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="glass p-8 rounded-[2.5rem] border border-white/5"
+              className="glass p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-white/5"
             >
-              <div className="flex items-center justify-between mb-10">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 md:mb-10">
                 <div>
-                  <h2 className="text-2xl font-bold">Business Profile</h2>
+                  <h2 className="text-xl md:text-2xl font-bold">Business Profile</h2>
                   <p className="text-sm text-gray-500">Apne business ki details update karo</p>
                 </div>
                 {saveSuccess && (
-                  <div className="flex items-center gap-2 text-green-500 text-sm font-bold bg-green-500/10 px-4 py-2 rounded-full border border-green-500/20">
+                  <div className="flex items-center gap-2 text-green-500 text-sm font-bold bg-green-500/10 px-4 py-2 rounded-full border border-green-500/20 self-start">
                     <CheckCircle2 className="w-4 h-4" /> Changes Save ho gaye!
                   </div>
                 )}
@@ -338,15 +338,15 @@ const SettingsPage = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="glass p-8 rounded-[2.5rem] border border-white/5"
+              className="glass p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-white/5"
             >
-              <div className="flex items-center justify-between mb-10">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 md:mb-10">
                 <div>
-                  <h2 className="text-2xl font-bold">Notifications</h2>
+                  <h2 className="text-xl md:text-2xl font-bold">Notifications</h2>
                   <p className="text-sm text-gray-500">Apne alerts manage karo</p>
                 </div>
                 {saveSuccess && (
-                  <div className="flex items-center gap-2 text-green-500 text-sm font-bold bg-green-500/10 px-4 py-2 rounded-full border border-green-500/20">
+                  <div className="flex items-center gap-2 text-green-500 text-sm font-bold bg-green-500/10 px-4 py-2 rounded-full border border-green-500/20 self-start">
                     <CheckCircle2 className="w-4 h-4" /> Changes Save ho gaye!
                   </div>
                 )}
@@ -401,12 +401,12 @@ const SettingsPage = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="space-y-8"
+              className="space-y-6 md:space-y-8"
             >
-              <div className="glass p-10 rounded-[2.5rem] border border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
-                <div>
+              <div className="glass p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] border border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 md:gap-8">
+                <div className="text-center md:text-left">
                   <div className="bg-orange-500/10 text-orange-500 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest inline-block mb-4">Current Plan</div>
-                  <h2 className="text-4xl font-display font-bold mb-2">FREE PLAN</h2>
+                  <h2 className="text-3xl md:text-4xl font-display font-bold mb-2">FREE PLAN</h2>
                   <p className="text-gray-400">20 invoices per month</p>
                 </div>
                 <div className="flex-1 max-w-xs w-full">
@@ -431,7 +431,7 @@ const SettingsPage = () => {
                 </div>
               </div>
 
-              <div className="glass p-10 rounded-[2.5rem] border-2 border-orange-500 relative overflow-hidden">
+              <div className="glass p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] border-2 border-orange-500 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-[100px] -mr-32 -mt-32" />
                 <div className="relative z-10">
                   <h3 className="text-2xl font-bold mb-2">Upgrade to PRO</h3>
@@ -470,15 +470,15 @@ const SettingsPage = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="glass p-8 rounded-[2.5rem] border border-white/5"
+              className="glass p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-white/5"
             >
-              <div className="flex items-center justify-between mb-10">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 md:mb-10">
                 <div>
-                  <h2 className="text-2xl font-bold">Invoice Settings</h2>
+                  <h2 className="text-xl md:text-2xl font-bold">Invoice Settings</h2>
                   <p className="text-sm text-gray-500">Invoices ko customize karo</p>
                 </div>
                 {saveSuccess && (
-                  <div className="flex items-center gap-2 text-green-500 text-sm font-bold bg-green-500/10 px-4 py-2 rounded-full border border-green-500/20">
+                  <div className="flex items-center gap-2 text-green-500 text-sm font-bold bg-green-500/10 px-4 py-2 rounded-full border border-green-500/20 self-start">
                     <CheckCircle2 className="w-4 h-4" /> Changes Save ho gaye!
                   </div>
                 )}
@@ -680,11 +680,11 @@ const SettingsPage = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="space-y-8"
+              className="space-y-6 md:space-y-8"
             >
-              <div className="glass p-8 rounded-[2.5rem] border border-white/5">
-                <h2 className="text-2xl font-bold mb-2">Security</h2>
-                <p className="text-sm text-gray-500 mb-10">Manage your account security</p>
+              <div className="glass p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-white/5">
+                <h2 className="text-xl md:text-2xl font-bold mb-2">Security</h2>
+                <p className="text-sm text-gray-500 mb-8 md:mb-10">Manage your account security</p>
 
                 <div className="space-y-6">
                   <div className="flex items-center justify-between p-6 bg-white/5 rounded-2xl border border-white/5">

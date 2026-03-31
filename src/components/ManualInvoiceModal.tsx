@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Plus, Trash2, Save, Loader2, User, Search, Package } from 'lucide-react';
+import { X, Plus, Trash2, Save, Loader2, User, Search, Package, FileText } from 'lucide-react';
 import { useFirebase } from './FirebaseProvider';
 import { useInvoiceLimit } from '../hooks/useInvoiceLimit';
 import { db, collection, addDoc, serverTimestamp, query, where, getDocs, handleFirestoreError, OperationType } from '../firebase';
@@ -277,28 +277,36 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center sm:p-6">
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm hidden sm:block"
       />
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-4xl bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="relative w-full h-full sm:h-auto sm:max-w-4xl bg-[var(--bg-primary)] sm:border sm:border-[var(--border-color)] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col"
       >
-        <div className="p-6 border-b border-[var(--border-color)] flex items-center justify-between flex-shrink-0">
-          <h2 className="text-2xl font-bold">Manual Invoice Banao</h2>
-          <button onClick={onClose} className="p-2 hover:bg-[var(--bg-secondary)] rounded-lg">
-            <X className="w-6 h-6 text-[var(--text-secondary)]" />
+        <div className="p-4 sm:p-6 border-b border-[var(--border-color)] flex items-center justify-between flex-shrink-0 bg-gradient-to-r from-orange-500/5 to-transparent">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-500/10 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-inner">
+              <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
+            </div>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Manual Invoice</h2>
+              <p className="text-[10px] sm:text-xs text-[var(--text-secondary)] font-medium">Naya bill manually banayein</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-[var(--bg-secondary)] rounded-xl transition-all group">
+            <X className="w-6 h-6 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
           </button>
         </div>
 
-        <div className="p-8 overflow-y-auto flex-1 space-y-8">
+        <div className="p-5 sm:p-8 overflow-y-auto flex-1 no-scrollbar">
           {/* Top Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
@@ -428,8 +436,8 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
             
             <div className="space-y-3">
               {items.map((item, index) => (
-                <div key={index} className="glass p-4 rounded-2xl border border-[var(--border-color)] grid grid-cols-12 gap-3 sm:gap-4 items-end">
-                  <div className="col-span-12 lg:col-span-4 space-y-1">
+                <div key={index} className="glass p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-[var(--border-color)] grid grid-cols-12 gap-4 items-end relative group">
+                  <div className="col-span-12 md:col-span-4 space-y-1">
                     <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Description / Product</label>
                     <div className="flex gap-2">
                       <select 
@@ -448,7 +456,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                       />
                     </div>
                   </div>
-                  <div className="col-span-4 lg:col-span-1 space-y-1">
+                  <div className="col-span-4 md:col-span-1 space-y-1">
                     <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Qty</label>
                     <input 
                       type="number" 
@@ -457,7 +465,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                       className="bg-transparent border-b border-[var(--border-color)] focus:border-orange-500 outline-none text-sm w-full py-1"
                     />
                   </div>
-                  <div className="col-span-8 lg:col-span-2 space-y-1">
+                  <div className="col-span-8 md:col-span-2 space-y-1">
                     <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Rate (₹)</label>
                     <input 
                       type="number" 
@@ -466,7 +474,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                       className="bg-transparent border-b border-[var(--border-color)] focus:border-orange-500 outline-none text-sm w-full py-1"
                     />
                   </div>
-                  <div className="col-span-6 lg:col-span-2 space-y-1">
+                  <div className="col-span-6 md:col-span-2 space-y-1">
                     <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">GST %</label>
                     <select 
                       value={item.gstRate}
@@ -480,11 +488,11 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                       <option value={28}>28%</option>
                     </select>
                   </div>
-                  <div className="col-span-6 lg:col-span-2 space-y-1">
+                  <div className="col-span-6 md:col-span-2 space-y-1">
                     <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Total</label>
                     <p className="text-sm font-bold font-mono py-1">₹{item.total.toLocaleString()}</p>
                   </div>
-                  <div className="col-span-12 lg:col-span-1 flex justify-end">
+                  <div className="absolute top-2 right-2 md:relative md:top-0 md:right-0 md:col-span-1 flex justify-end">
                     <button 
                       onClick={() => handleRemoveItem(index)}
                       className="p-2 hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-500 rounded-lg transition-colors"
@@ -558,14 +566,14 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
             </div>
           </div>
 
-        <div className="p-6 border-t border-[var(--border-color)] flex gap-4 flex-shrink-0">
-          <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-[var(--border-color)] hover:bg-[var(--bg-secondary)] font-bold transition-all">
+        <div className="p-4 sm:p-6 border-t border-[var(--border-color)] flex flex-col sm:flex-row gap-4 flex-shrink-0 bg-[var(--bg-secondary)]/30">
+          <button onClick={onClose} className="flex-1 py-3 sm:py-4 rounded-xl border border-[var(--border-color)] hover:bg-[var(--bg-secondary)] font-bold transition-all text-sm sm:text-base">
             Cancel
           </button>
           <button 
             onClick={handleSave}
             disabled={isSaving || !selectedCustomerId}
-            className="flex-[2] btn-orange flex items-center justify-center gap-2 disabled:opacity-50"
+            className="flex-[2] btn-orange h-12 sm:h-14 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base font-bold shadow-lg shadow-orange-500/20"
           >
             {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
             Invoice Save Karo
