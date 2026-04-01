@@ -290,7 +290,7 @@ export default function AdminPanel() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
               <div className="bg-[#0C1020] border border-white/10 p-6 rounded-2xl">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500">

@@ -9,8 +9,10 @@
         "email": { "type": "string" },
         "displayName": { "type": "string" },
         "businessName": { "type": "string" },
+        "shopName": { "type": "string" },
         "gstin": { "type": "string" },
         "address": { "type": "string" },
+        "state": { "type": "string" },
         "phone": { "type": "string" },
         "bankDetails": {
           "type": "object",

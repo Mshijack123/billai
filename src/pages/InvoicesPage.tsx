@@ -316,7 +316,7 @@ const InvoicesPage = () => {
       </div>
 
       {/* Summary Strip */}
-      <div className="glass rounded-2xl border border-[var(--border-color)] p-6 flex flex-wrap items-center justify-between gap-8">
+      <div className="glass rounded-[2rem] sm:rounded-[3rem] border border-[var(--border-color)] p-6 sm:p-10 flex flex-wrap items-center justify-between gap-8 xl:gap-12">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-[var(--bg-primary)]/5 rounded-xl flex items-center justify-center">
             <FileText className="w-5 h-5 text-[var(--text-secondary)]" />

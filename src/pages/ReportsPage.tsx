@@ -382,7 +382,7 @@ const ReportsPage = () => {
           #report-content .text-blue-500 { color: #3b82f6 !important; }
         `}</style>
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 xl:gap-10">
         <div className="glass p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] border border-white/5">
           <p className="text-[8px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1 sm:mb-2">Taxable Value</p>
           <p className="text-xl sm:text-3xl font-display font-bold mb-1 sm:mb-2">₹{stats.taxableValue.toLocaleString()}</p>
@@ -473,7 +473,7 @@ const ReportsPage = () => {
       </div>
 
       {/* Trend Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10 xl:gap-12">
         <div className="lg:col-span-2 glass p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] border border-white/5">
           <h3 className="text-lg sm:text-xl font-bold mb-6 lg:mb-8">Monthly GST Trend</h3>
           <div className="h-56 sm:h-80">

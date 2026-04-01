@@ -165,22 +165,33 @@ async function startServer() {
     }
   });
 
+  // Handle specific legacy routes or typos
+  app.get(["/Logon", "/logon"], (req, res) => {
+    console.log(`Redirecting legacy route: ${req.url} to /login`);
+    res.redirect("/login");
+  });
+
   // Vite middleware for development
   const isProd = process.env.NODE_ENV === "production";
+  console.log(`Server starting in ${isProd ? "production" : "development"} mode`);
   
   if (!isProd) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: "spa",
+      appType: "custom", // Use 'custom' to handle HTML serving manually
     });
     app.use(vite.middlewares);
 
     // SPA fallback for development
     app.get("*", async (req, res, next) => {
       const url = req.originalUrl;
+      // Skip API routes
+      if (url.startsWith("/api")) {
+        return next();
+      }
+
       try {
-        // Use path.resolve with __dirname for more reliable path resolution
-        const indexPath = path.resolve(__dirname, "index.html");
+        const indexPath = path.resolve(process.cwd(), "index.html");
         
         if (!fs.existsSync(indexPath)) {
           console.error("index.html not found at:", indexPath);
@@ -194,19 +205,22 @@ async function startServer() {
         if (vite) {
           vite.ssrFixStacktrace(e as Error);
         }
+        console.error("Vite SPA fallback error:", e);
         next(e);
       }
     });
   } else {
-    const distPath = path.resolve(__dirname, "dist");
-    const indexPath = path.resolve(distPath, "index.html");
+    const distPath = path.resolve(process.cwd(), "dist");
+    console.log(`Serving static files from: ${distPath}`);
     
     app.use(express.static(distPath));
     
     app.get("*", (req, res) => {
+      const indexPath = path.resolve(distPath, "index.html");
       if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
       } else {
+        console.error("Production index.html not found at:", indexPath);
         res.status(404).send("Not Found - Build the app first. If you are in development, set NODE_ENV to development.");
       }
     });

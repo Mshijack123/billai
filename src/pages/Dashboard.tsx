@@ -299,7 +299,7 @@ const Dashboard = () => {
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
         <StatCard 
           title="Revenue" 
           value={`₹${stats.totalRevenue.toLocaleString()}`} 
@@ -335,9 +335,9 @@ const Dashboard = () => {
       </div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-8 sm:gap-10">
         {/* Revenue Chart */}
-        <div className="lg:col-span-2 glass p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-[var(--border-color)] relative overflow-hidden">
+        <div className="lg:col-span-2 xl:col-span-3 glass p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-[var(--border-color)] relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full blur-[100px] -mr-32 -mt-32" />
           
           <div className="relative z-10">

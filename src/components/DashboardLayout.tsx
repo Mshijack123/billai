@@ -306,7 +306,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
           </div>
         </header>
 
-        <div className="p-4 lg:p-8 pb-24 lg:pb-8">
+        <div className="p-4 lg:p-8 pb-24 lg:pb-8 max-w-screen-2xl mx-auto w-full">
           {children}
         </div>
 

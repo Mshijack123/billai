@@ -127,18 +127,51 @@ const SettingsPage = () => {
     setIsSaving(true);
     setError(null);
     try {
-      // Ensure we include plan and role to satisfy security rules
-      const updateData = {
-        ...formData,
-        plan: profile.plan,
-        role: profile.role
+      // Recursive function to clean object of undefined values
+      const cleanData = (obj: any): any => {
+        const cleaned: any = Array.isArray(obj) ? [] : {};
+        Object.keys(obj).forEach(key => {
+          const value = obj[key];
+          if (value !== undefined && value !== null) {
+            if (typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+              cleaned[key] = cleanData(value);
+            } else {
+              cleaned[key] = value;
+            }
+          }
+        });
+        return cleaned;
       };
+
+      const updateData = cleanData(formData);
+      
+      // Ensure we don't accidentally try to update plan or role if they were somehow in formData
+      delete updateData.plan;
+      delete updateData.role;
+      delete updateData.uid;
+      delete updateData.createdAt;
+
       await updateDoc(doc(db, 'users', profile.uid), updateData);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
-    } catch (err) {
-      console.error(err);
-      setError('Settings save karne mein error aayi. Please try again.');
+    } catch (err: any) {
+      console.error('Save Error:', err);
+      let errorMessage = 'Settings save karne mein error aayi.';
+      
+      // Try to extract a more meaningful error message
+      const errorStr = err instanceof Error ? err.message : String(err);
+      if (errorStr.includes('permission-denied')) {
+        errorMessage = 'Permission denied. Aapko is profile ko update karne ka haq nahi hai.';
+      } else {
+        try {
+          const parsed = JSON.parse(errorStr);
+          if (parsed.error) errorMessage = `Error: ${parsed.error}`;
+        } catch (e) {
+          errorMessage = `Error: ${errorStr}`;
+        }
+      }
+      
+      setError(errorMessage);
       handleFirestoreError(err, OperationType.UPDATE, `users/${profile.uid}`);
     } finally {
       setIsSaving(false);
@@ -270,7 +303,7 @@ const SettingsPage = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Business Name *</label>
                     <input 
@@ -359,7 +392,7 @@ const SettingsPage = () => {
 
                 <div className="pt-8 border-t border-white/5">
                   <h3 className="text-lg font-bold mb-6">Bank Details</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 sm:gap-8">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Bank Name</label>
                       <input 
