@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Plus, Trash2, Save, Loader2, User, Search, Package, FileText } from 'lucide-react';
+import { X, Plus, Trash2, Save, Loader2, User, Search, Package, FileText, Zap } from 'lucide-react';
 import { useFirebase } from './FirebaseProvider';
 import { useInvoiceLimit } from '../hooks/useInvoiceLimit';
 import { db, collection, addDoc, serverTimestamp, query, where, getDocs, handleFirestoreError, OperationType } from '../firebase';
@@ -295,7 +295,7 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full h-full sm:h-auto sm:max-w-4xl bg-[var(--bg-primary)] sm:border sm:border-[var(--border-color)] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col"
+        className="relative w-full h-full sm:h-auto sm:max-w-5xl lg:max-w-6xl bg-[var(--bg-primary)] sm:border sm:border-[var(--border-color)] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col"
       >
         <div className="p-4 sm:p-6 border-b border-[var(--border-color)] flex items-center justify-between flex-shrink-0 bg-gradient-to-r from-orange-500/5 to-transparent">
           <div className="flex items-center gap-3 sm:gap-4">
@@ -314,8 +314,8 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
 
         <div className="p-5 sm:p-8 overflow-y-auto flex-1 no-scrollbar">
           {/* Top Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="space-y-4 lg:col-span-2">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Customer Select Karo *</label>
                 <div className="relative">
@@ -441,9 +441,11 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
           </div>
 
           {/* Items Table */}
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-widest">Invoice Items</h3>
+          <div className="space-y-6 mb-8">
+            <div className="flex justify-between items-center border-b border-[var(--border-color)] pb-4">
+              <h3 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-widest flex items-center gap-2">
+                <Package className="w-4 h-4" /> Invoice Items
+              </h3>
               <button 
                 onClick={handleAddItem}
                 className="text-xs font-bold text-orange-500 hover:text-orange-400 flex items-center gap-1"
@@ -524,9 +526,12 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
           </div>
 
           {/* Bottom Summary */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Payment Status</label>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8 pt-8 border-t border-[var(--border-color)]">
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-2">
+                  <Zap className="w-4 h-4" /> Payment Status
+                </label>
                 <div className="flex gap-2">
                   {['paid', 'pending', 'partial'].map(s => (
                     <button
@@ -534,8 +539,8 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                       type="button"
                       onClick={() => setStatus(s as any)}
                       className={cn(
-                        "flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-widest border transition-all",
-                        status === s ? "bg-orange-500 border-orange-500 text-white" : "border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"
+                        "flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-widest border transition-all shadow-sm",
+                        status === s ? "bg-orange-500 border-orange-500 text-white shadow-orange-500/20" : "border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"
                       )}
                     >
                       {s}
@@ -544,44 +549,49 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
                 </div>
               </div>
               {status === 'partial' && (
-                <div className="space-y-2">
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-2 p-4 bg-orange-500/5 rounded-2xl border border-orange-500/20"
+                >
                   <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Paid Amount (₹)</label>
                   <input 
                     type="number" 
                     value={paidAmount}
                     onChange={(e) => setPaidAmount(Number(e.target.value))}
                     max={totals.total}
-                    className="input-dark w-full" 
+                    className="input-dark w-full bg-white/5" 
                   />
-                  <p className="text-[10px] text-[var(--text-secondary)]">Balance: ₹{(totals.total - paidAmount).toLocaleString()}</p>
-                </div>
+                  <p className="text-[10px] text-orange-500 font-bold">Balance: ₹{(totals.total - paidAmount).toLocaleString()}</p>
+                </motion.div>
               )}
             </div>
             
-            <div className="glass p-6 rounded-3xl border border-[var(--border-color)] space-y-3">
+            <div className="glass p-8 rounded-[2rem] border border-[var(--border-color)] space-y-4 bg-gradient-to-br from-orange-500/5 to-transparent">
               <div className="flex justify-between text-sm text-[var(--text-secondary)]">
                 <span>Subtotal</span>
-                <span className="font-mono">₹{totals.subtotal.toLocaleString()}</span>
+                <span className="font-mono font-bold">₹{totals.subtotal.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-sm text-[var(--text-secondary)]">
                 <span>Total GST</span>
-                <span className="font-mono">₹{totals.gst.toLocaleString()}</span>
+                <span className="font-mono font-bold">₹{totals.gst.toLocaleString()}</span>
               </div>
               {calculateGSTType(profile?.state || 'Rajasthan', customerState) === 'CGST_SGST' ? (
-                <div className="flex gap-4 text-[10px] font-bold text-[var(--text-secondary)] justify-end">
+                <div className="flex gap-4 text-[10px] font-bold text-[var(--text-secondary)] justify-end opacity-70">
                   <span>CGST: ₹{(totals.gst / 2).toLocaleString()}</span>
                   <span>SGST: ₹{(totals.gst / 2).toLocaleString()}</span>
                 </div>
               ) : (
-                <div className="flex gap-4 text-[10px] font-bold text-[var(--text-secondary)] justify-end">
+                <div className="flex gap-4 text-[10px] font-bold text-[var(--text-secondary)] justify-end opacity-70">
                   <span>IGST: ₹{totals.gst.toLocaleString()}</span>
                 </div>
               )}
-              <div className="flex justify-between text-xl font-bold pt-3 border-t border-[var(--border-color)]">
+              <div className="flex justify-between text-2xl font-bold pt-4 border-t border-[var(--border-color)]">
                 <span>Total Amount</span>
                 <span className="text-orange-500 font-mono">₹{totals.total.toLocaleString()}</span>
               </div>
             </div>
+          </div>
           </div>
 
         <div className="p-4 sm:p-6 border-t border-[var(--border-color)] flex flex-col sm:flex-row gap-4 flex-shrink-0 bg-[var(--bg-secondary)]/30">
