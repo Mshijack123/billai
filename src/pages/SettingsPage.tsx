@@ -120,11 +120,20 @@ const SettingsPage = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile) return;
+    if (!profile) {
+      setError('Profile load nahi hua hai. Please wait or refresh.');
+      return;
+    }
     setIsSaving(true);
     setError(null);
     try {
-      await updateDoc(doc(db, 'users', profile.uid), formData);
+      // Ensure we include plan and role to satisfy security rules
+      const updateData = {
+        ...formData,
+        plan: profile.plan,
+        role: profile.role
+      };
+      await updateDoc(doc(db, 'users', profile.uid), updateData);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
@@ -187,7 +196,12 @@ const SettingsPage = () => {
                 </div>
                 {saveSuccess && (
                   <div className="flex items-center gap-2 text-green-500 text-sm font-bold bg-green-500/10 px-4 py-2 rounded-full border border-green-500/20 self-start">
-                    <CheckCircle2 className="w-4 h-4" /> Changes Save ho gaye!
+                    <CheckCircle2 className="w-4 h-4" /> Business Profile save ho gayi!
+                  </div>
+                )}
+                {error && (
+                  <div className="flex items-center gap-2 text-red-500 text-sm font-bold bg-red-500/10 px-4 py-2 rounded-full border border-red-500/20 self-start">
+                    <AlertCircle className="w-4 h-4" /> {error}
                   </div>
                 )}
               </div>
@@ -414,7 +428,12 @@ const SettingsPage = () => {
                 </div>
                 {saveSuccess && (
                   <div className="flex items-center gap-2 text-green-500 text-sm font-bold bg-green-500/10 px-4 py-2 rounded-full border border-green-500/20 self-start">
-                    <CheckCircle2 className="w-4 h-4" /> Changes Save ho gaye!
+                    <CheckCircle2 className="w-4 h-4" /> Notifications save ho gayi!
+                  </div>
+                )}
+                {error && (
+                  <div className="flex items-center gap-2 text-red-500 text-sm font-bold bg-red-500/10 px-4 py-2 rounded-full border border-red-500/20 self-start">
+                    <AlertCircle className="w-4 h-4" /> {error}
                   </div>
                 )}
               </div>
@@ -553,7 +572,12 @@ const SettingsPage = () => {
                 </div>
                 {saveSuccess && (
                   <div className="flex items-center gap-2 text-green-500 text-sm font-bold bg-green-500/10 px-4 py-2 rounded-full border border-green-500/20 self-start">
-                    <CheckCircle2 className="w-4 h-4" /> Changes Save ho gaye!
+                    <CheckCircle2 className="w-4 h-4" /> Invoice Settings save ho gayi!
+                  </div>
+                )}
+                {error && (
+                  <div className="flex items-center gap-2 text-red-500 text-sm font-bold bg-red-500/10 px-4 py-2 rounded-full border border-red-500/20 self-start">
+                    <AlertCircle className="w-4 h-4" /> {error}
                   </div>
                 )}
               </div>
