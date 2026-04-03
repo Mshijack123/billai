@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { FirebaseProvider, useFirebase } from './components/FirebaseProvider';
 import { PricingProvider } from './components/PricingContext';
 import { ThemeProvider } from './components/ThemeContext';

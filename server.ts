@@ -178,37 +178,9 @@ async function startServer() {
   if (!isProd) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: "custom", // Use 'custom' to handle HTML serving manually
+      appType: "spa", // Use 'spa' to handle HTML serving and fallback automatically
     });
     app.use(vite.middlewares);
-
-    // SPA fallback for development
-    app.get("*", async (req, res, next) => {
-      const url = req.originalUrl;
-      // Skip API routes
-      if (url.startsWith("/api")) {
-        return next();
-      }
-
-      try {
-        const indexPath = path.resolve(process.cwd(), "index.html");
-        
-        if (!fs.existsSync(indexPath)) {
-          console.error("index.html not found at:", indexPath);
-          return next();
-        }
-        
-        let template = fs.readFileSync(indexPath, "utf-8");
-        template = await vite.transformIndexHtml(url, template);
-        res.status(200).set({ "Content-Type": "text/html" }).end(template);
-      } catch (e) {
-        if (vite) {
-          vite.ssrFixStacktrace(e as Error);
-        }
-        console.error("Vite SPA fallback error:", e);
-        next(e);
-      }
-    });
   } else {
     const distPath = path.resolve(process.cwd(), "dist");
     console.log(`Serving static files from: ${distPath}`);
