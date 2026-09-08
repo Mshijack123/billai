@@ -6,16 +6,15 @@ import { ThemeProvider } from './components/ThemeContext';
 import { DashboardLayout } from './components/DashboardLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-// Lazy load pages
-const LandingPage = React.lazy(() => import('./pages/LandingPage'));
-const LoginPage = React.lazy(() => import('./pages/LoginPage'));
-const Dashboard = React.lazy(() => import('./pages/Dashboard'));
-const InvoicesPage = React.lazy(() => import('./pages/InvoicesPage'));
-const CustomersPage = React.lazy(() => import('./pages/CustomersPage'));
-const ItemsPage = React.lazy(() => import('./pages/ItemsPage'));
-const ReportsPage = React.lazy(() => import('./pages/ReportsPage'));
-const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
-const AdminPanel = React.lazy(() => import('./pages/AdminPanel'));
+import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
+import Dashboard from './pages/Dashboard';
+import InvoicesPage from './pages/InvoicesPage';
+import CustomersPage from './pages/CustomersPage';
+import ItemsPage from './pages/ItemsPage';
+import ReportsPage from './pages/ReportsPage';
+import SettingsPage from './pages/SettingsPage';
+import AdminPanel from './pages/AdminPanel';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useFirebase();

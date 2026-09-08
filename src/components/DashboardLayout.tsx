@@ -72,6 +72,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [isProfileOpen, setIsProfileOpen] = React.useState(false);
   const [isQuickActionOpen, setIsQuickActionOpen] = React.useState(false);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -101,8 +102,6 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
   if (isAdmin && !isSuperAdmin) {
     navItems.push({ to: '/admin', icon: Shield, label: 'Admin Panel' });
   }
-
-  const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   const handleRefresh = () => {
     setIsRefreshing(true);

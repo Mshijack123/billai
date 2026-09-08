@@ -568,14 +568,24 @@ const Dashboard = () => {
       <AIInvoiceModal 
         isOpen={isAIModalOpen} 
         onClose={() => setIsAIModalOpen(false)} 
-        onSuccess={() => {}}
+        onSuccess={(createdInv) => {
+          setIsAIModalOpen(false);
+          if (createdInv) {
+            setSelectedInvoice(createdInv);
+          }
+        }}
         onUpgrade={openPricing}
       />
 
       <ManualInvoiceModal 
         isOpen={isManualModalOpen}
         onClose={() => setIsManualModalOpen(false)}
-        onSuccess={() => {}}
+        onSuccess={(createdInv) => {
+          setIsManualModalOpen(false);
+          if (createdInv) {
+            setSelectedInvoice(createdInv);
+          }
+        }}
         onUpgrade={openPricing}
       />
 

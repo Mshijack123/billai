@@ -6,6 +6,7 @@ import { createServer as createViteServer } from "vite";
 import axios from "axios";
 import dotenv from "dotenv";
 import admin from "firebase-admin";
+import { GoogleGenAI, Type } from "@google/genai";
 
 dotenv.config();
 
@@ -21,11 +22,191 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
+// Helper for Gemini AI client with telemetry user agent
+let geminiClient: GoogleGenAI | null = null;
+function getGeminiClient(): GoogleGenAI {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not set in the environment.");
+  }
+  if (!geminiClient) {
+    geminiClient = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
+      },
+    });
+  }
+  return geminiClient;
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  // Support JSON and base64 bill image payloads
+  app.use(express.json({ limit: "15mb" }));
+  app.use(express.urlencoded({ extended: true, limit: "15mb" }));
+
+  // --- Gemini AI Invoice Endpoints ---
+  app.post("/api/gemini/parse-prompt", async (req, res) => {
+    const { prompt, existingProducts } = req.body;
+    if (!prompt || typeof prompt !== "string") {
+      return res.status(400).json({ error: "Prompt string is required" });
+    }
+
+    try {
+      const ai = getGeminiClient();
+
+      const productsContext = existingProducts && existingProducts.length > 0
+        ? `\n\nExisting Products Catalog (Match item names and use these rates and GST rates if items match):
+${existingProducts.map((p: any) => `- ${p.name}: ₹${p.rate}, GST ${p.gstRate}%, HSN: ${p.hsn || 'N/A'}`).join('\n')}`
+        : '';
+
+      const systemInstruction = `You are an expert Indian GST billing assistant. Your task is to extract structured JSON data for creating an official GST invoice from Hindi, Hinglish, Devanagari, or English billing text.
+Rules:
+1. Extract customer_name. If no name is mentioned, return "Cash Customer".
+2. Extract customer_phone if a 10-digit number is given.
+3. Extract customer_address and customer_state if mentioned.
+4. Extract customer_gstin if mentioned.
+5. Extract items: array of items with:
+   - description: item name
+   - hsn: HSN code (if mentioned or matched from catalog)
+   - qty: quantity number (default 1)
+   - rate: unit price in Rupees before GST (if total price given, divide by qty; if matched with existing product, use product rate)
+   - gst_rate: GST percentage (0, 5, 12, 18, 28; default 18)
+6. Extract payment_status: 'paid' | 'pending' | 'partial'. Words like 'udhaar', 'baaki', 'unpaid', 'pending' mean 'pending'. Words like 'paid', 'rokr', 'cash', 'jama', 'online' mean 'paid'.
+7. Extract paid_amount if partial or paid.
+8. Extract notes if any.
+Return ONLY valid JSON matching the schema.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.8-flash",
+        contents: `Parse this billing prompt:\n"${prompt}"\n${productsContext}`,
+        config: {
+          systemInstruction,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              customer_name: { type: Type.STRING },
+              customer_phone: { type: Type.STRING },
+              customer_address: { type: Type.STRING },
+              customer_state: { type: Type.STRING },
+              customer_gstin: { type: Type.STRING },
+              items: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    description: { type: Type.STRING },
+                    hsn: { type: Type.STRING },
+                    qty: { type: Type.NUMBER },
+                    rate: { type: Type.NUMBER },
+                    gst_rate: { type: Type.NUMBER }
+                  },
+                  required: ["description", "qty", "rate", "gst_rate"]
+                }
+              },
+              payment_status: { type: Type.STRING, enum: ["paid", "pending", "partial"] },
+              paid_amount: { type: Type.NUMBER },
+              notes: { type: Type.STRING }
+            },
+            required: ["customer_name", "items", "payment_status"]
+          }
+        }
+      });
+
+      const parsed = JSON.parse(response.text || "{}");
+      res.json(parsed);
+    } catch (err: any) {
+      console.error("Gemini parse-prompt error:", err);
+      res.status(500).json({ error: err.message || "Failed to parse prompt with AI" });
+    }
+  });
+
+  app.post("/api/gemini/parse-image", async (req, res) => {
+    const { image, mimeType, existingProducts } = req.body;
+    if (!image || typeof image !== "string") {
+      return res.status(400).json({ error: "Image base64 data is required" });
+    }
+
+    try {
+      const ai = getGeminiClient();
+
+      const productsContext = existingProducts && existingProducts.length > 0
+        ? `\n\nExisting Products Catalog (Match item names and use these rates and GST rates if items match):
+${existingProducts.map((p: any) => `- ${p.name}: ₹${p.rate}, GST ${p.gstRate}%, HSN: ${p.hsn || 'N/A'}`).join('\n')}`
+        : '';
+
+      const systemInstruction = `You are an expert Indian GST billing assistant. Extract all invoice details from this receipt/bill photo or handwritten parcha into structured JSON.
+Rules:
+1. Extract customer_name (if not visible, return "Cash Customer").
+2. Extract customer_phone, customer_address, customer_state, customer_gstin if present.
+3. Extract all line items: description, hsn (if any), qty (number), rate (unit price), and gst_rate (0, 5, 12, 18, 28; default 18).
+4. Extract payment_status: 'paid' | 'pending' | 'partial'.
+5. Extract paid_amount if partial or paid.
+6. Extract notes if any.
+Return clean JSON matching the schema.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.8-flash",
+        contents: {
+          parts: [
+            {
+              inlineData: {
+                data: image,
+                mimeType: mimeType || "image/jpeg"
+              }
+            },
+            {
+              text: `Extract invoice and item details from this bill image.\n${productsContext}`
+            }
+          ]
+        },
+        config: {
+          systemInstruction,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              customer_name: { type: Type.STRING },
+              customer_phone: { type: Type.STRING },
+              customer_address: { type: Type.STRING },
+              customer_state: { type: Type.STRING },
+              customer_gstin: { type: Type.STRING },
+              items: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    description: { type: Type.STRING },
+                    hsn: { type: Type.STRING },
+                    qty: { type: Type.NUMBER },
+                    rate: { type: Type.NUMBER },
+                    gst_rate: { type: Type.NUMBER }
+                  },
+                  required: ["description", "qty", "rate", "gst_rate"]
+                }
+              },
+              payment_status: { type: Type.STRING, enum: ["paid", "pending", "partial"] },
+              paid_amount: { type: Type.NUMBER },
+              notes: { type: Type.STRING }
+            },
+            required: ["customer_name", "items", "payment_status"]
+          }
+        }
+      });
+
+      const parsed = JSON.parse(response.text || "{}");
+      res.json(parsed);
+    } catch (err: any) {
+      console.error("Gemini parse-image error:", err);
+      res.status(500).json({ error: err.message || "Failed to parse invoice image with AI" });
+    }
+  });
 
   // Instamojo Configuration
   const INSTAMOJO_API_KEY = process.env.INSTAMOJO_API_KEY;

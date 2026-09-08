@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Download, Share2, Edit3, Printer, Loader2, CreditCard, History, Plus, Calendar as CalendarIcon, IndianRupee, Layout, Trash2 } from 'lucide-react';
 import { Invoice, UserProfile, Payment } from '../types';
 import { numberToWords } from '../lib/utils';
-import { toPng } from 'html-to-image';
+import { captureElementToPng } from '../lib/pdf-export';
 import { jsPDF } from 'jspdf';
 import { db, doc, updateDoc, deleteDoc } from '../firebase';
 
@@ -107,26 +107,12 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
       setIsDownloading(true);
       try {
         // Wait for rendering
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 500));
         
-        const imgData = await toPng(element, {
-          quality: 1.0,
-          pixelRatio: 2,
+        const imgData = await captureElementToPng(element, {
           backgroundColor: '#ffffff',
-          style: {
-            transform: 'none',
-            scale: '1',
-            margin: '0',
-            position: 'relative',
-            boxShadow: 'none',
-            width: '1000px',
-            height: 'auto',
-            left: '0',
-            top: '0',
-            display: 'block',
-            visibility: 'visible',
-            opacity: '1'
-          }
+          width: '1000px',
+          pixelRatio: 2
         });
 
         const pdf = new jsPDF({
@@ -214,27 +200,12 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
     setIsDownloading(true);
     try {
       // Use a slightly longer timeout to ensure everything is rendered
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Use html-to-image instead of html2canvas for better modern CSS support
-      const imgData = await toPng(element, {
-        quality: 1.0,
-        pixelRatio: 2,
+      const imgData = await captureElementToPng(element, {
         backgroundColor: '#ffffff',
-        style: {
-          transform: 'none',
-          scale: '1',
-          margin: '0',
-          position: 'relative',
-          boxShadow: 'none',
-          width: '1000px',
-          height: 'auto',
-          left: '0',
-          top: '0',
-          display: 'block',
-          visibility: 'visible',
-          opacity: '1'
-        }
+        width: '1000px',
+        pixelRatio: 2
       });
       
       if (!imgData) {

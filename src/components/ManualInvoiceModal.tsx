@@ -17,7 +17,7 @@ function cn(...inputs: ClassValue[]) {
 interface ManualInvoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (invoice?: Invoice) => void;
   onUpgrade?: () => void;
   initialProduct?: Product;
 }
@@ -265,12 +265,12 @@ export const ManualInvoiceModal: React.FC<ManualInvoiceModalProps> = ({ isOpen, 
         createdAt: new Date().toISOString()
       };
 
-      await addDoc(collection(db, 'invoices'), {
+      const docRef = await addDoc(collection(db, 'invoices'), {
         ...newInvoice,
         createdAt: serverTimestamp()
       });
 
-      onSuccess();
+      onSuccess({ id: docRef.id, ...newInvoice } as Invoice);
       onClose();
     } catch (err: any) {
       handleFirestoreError(err, OperationType.WRITE, 'invoices');

@@ -11,7 +11,7 @@ import { useFirebase } from '../components/FirebaseProvider';
 import { db, collection, query, where, onSnapshot, handleFirestoreError, OperationType } from '../firebase';
 import { Invoice } from '../types';
 import { exportToCSV } from '../lib/csv-export';
-import { toPng } from 'html-to-image';
+import { captureElementToPng } from '../lib/pdf-export';
 import { jsPDF } from 'jspdf';
 import { motion } from 'motion/react';
 import {
@@ -204,18 +204,14 @@ const ReportsPage = () => {
     setIsExportingPDF(true);
     try {
       // Use a slightly longer timeout to ensure everything is rendered
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Use html-to-image instead of html2canvas for better modern CSS support
-      const imgData = await toPng(element, {
-        quality: 1.0,
-        pixelRatio: 2,
+      const imgData = await captureElementToPng(element, {
         backgroundColor: '#0C1020',
-        style: {
-          padding: '40px',
-          backgroundColor: '#0C1020',
-          color: '#ffffff'
-        }
+        padding: '40px',
+        color: '#ffffff',
+        width: '1200px',
+        pixelRatio: 2
       });
       
       if (!imgData) {
